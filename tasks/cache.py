@@ -1,17 +1,6 @@
 from adapters.git import issues, pulls, commits
 from providers.cache import redis_connection as r
-from model import Issue
-
-
-def clear(whitelist=None, blacklist=None):
-    for key in r.keys():
-        if "issue:" in key or "pull:" in key or "commit" in key:
-            r.delete(key)
-
-    r.delete("oldest-issues")
-    r.delete("oldest-pulls")
-    r.delete("least-updated-pulls")
-    r.delete("least-updated-issues")
+from providers.cache import obj_from_key
 
 def ranked_committers(lst):
     ret = {}
@@ -28,10 +17,6 @@ def ranked_committers(lst):
         else:
             ret[login] = 1
     return ret
-
-
-
-
 
 
 def cache_issues():
@@ -79,28 +64,16 @@ def filter_keys(key, func):
     lst = r.keys(key)
     return filter(func, lst)
 
-
-def issue_from_key(key):
-    i = Issue()
-    data = r.hgetall(key)
-    i.number = data.get('number')
-    i.title = data.get('title')
-    i.created_at = data.get('created_at')
-    i.updated_at = data.get('updated_at')
-    i.closed_at = data.get('closed_at')
-    i.state = data.get('state')
-    return i
-
 def open_issues():
-    open_issues = filter_keys("issue:*", lambda x: issue_from_key(x).state == "open")
+    open_issues = filter_keys("issue:*", lambda x: obj_from_key(x).state == "open")
     return open_issues
 
 def open_pulls():
-    open_issues = filter_keys("pull:*", lambda x: issue_from_key(x).state == "open")
+    open_issues = filter_keys("pull:*", lambda x: obj_from_key(x).state == "open")
     return open_issues
 
 def closed_issues():
-    closed_issues = filter_keys("issue:*", lambda x: issue_from_key(x).state == "closed")
+    closed_issues = filter_keys("issue:*", lambda x: obj_from_key(x).state == "closed")
     return closed_issues
 
 def oldest(lst):
@@ -111,22 +84,22 @@ def least_updated(lst):
 
 def oldest_issues():
     op = open_issues()
-    ls = [issue_from_key(z) for z in op]
+    ls = [obj_from_key(z) for z in op]
     create_view('oldest-issues', oldest(ls))
 
 def oldest_pulls():
     op = open_pulls()
-    ls = [issue_from_key(z) for z in op]
+    ls = [obj_from_key(z) for z in op]
     create_view('oldest-pulls', oldest(ls))
 
 def least_issues():
     op = open_issues()
-    ls = [issue_from_key(z) for z in op]
+    ls = [obj_from_key(z) for z in op]
     create_view('least-updated-issues', least_updated(ls))
 
 def least_pulls():
     op = open_pulls()
-    ls = [issue_from_key(z) for z in op]
+    ls = [obj_from_key(z) for z in op]
     create_view('least-updated-pulls', least_updated(ls))
 
 
@@ -135,8 +108,6 @@ def create_view(key, lst):
     for i in lst:
         k = i.__key__()
         r.rpush(key, k)
-
-
 
 
 def build_cache():

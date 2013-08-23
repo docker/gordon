@@ -19,6 +19,17 @@ class Issue(object):
     def __key__(self):
         return "issue:{0}".format(self.number)
 
+    def from_dict(self, data):
+        self.number = data.get('number')
+        self.title = data.get('title')
+        self.created_at = data.get('created_at')
+        self.updated_at = data.get('updated_at')
+        self.closed_at = data.get('closed_at')
+        self.age = self.age()
+        self.state = data.get('state')
+        return self
+
+
 class Cache(object):
     def __init__(self, last_updated):
         self.last_updated = None

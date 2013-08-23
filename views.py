@@ -1,22 +1,16 @@
 from flask import render_template
-from app import app
-from adapters.fredis import RedisAdapter
-from model import Cache
-
-def cache():
-    build_cache()
-    return render_template('cache.html')
+from controller import IssueController as IC
 
 def index():
-    c = Cache()
-    c.load()
-    a = RedisAdapter()
+    c = None
+    ic = IC()
+    print ic.get_oldest_issues()
     return render_template('index.html', 
-            oldest_issues = a.get_oldest_issues(),
-            oldest_pulls = a.get_oldest_pulls(),
-            attention_issues = a.get_least_issues(),
-            attention_pulls = a.get_least_pulls(),
-            top_contributors = a.get_top_contributors(),
+            oldest_issues = ic.get_oldest_issues(),
+            oldest_pulls = ic.get_oldest_pulls(),
+            attention_issues = ic.get_least_issues(),
+            attention_pulls = ic.get_least_pulls(),
+            top_contributors = ic.get_top_contributors(),
             cache = c,
             )
 

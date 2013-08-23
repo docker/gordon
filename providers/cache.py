@@ -1,28 +1,14 @@
 import redis 
 from config import properties
 
+from model import Committer
+from model import Issue
+from model import Cache
 
-class RedisAdapter(object):
-    def __init__(self):
-        self.connection = redis.StrictRedis(host=properties.get('REDIS_HOST'), port=int(properties.get('REDIS_PORT')))
+redis_connection = redis.StrictRedis(host=properties.get('REDIS_HOST'), port=int(properties.get('REDIS_PORT')))
 
-    def add(prefix, num, di):
-        if not isinstance(di, dict): return
-        self.connection.hmset('{0}:{1}'.format(prefix, num), di)
-
-    def zadd(key, weight, relationship):
-        "# relationship is k:v"
-        self.connection.zadd(key, weight, relationship)
-
-    def push(name, prefix, num):
-        key = "{0}:{1}".format(prefix, num)
-        self.connection.rpush(name, key)
-
-    def delete(key):
-        self.connection.delete(key)
-
+class CacheProvider(object):
     def construct_issue_list_from_range(key, start=0, stop=4):
-        print "getting key {0}".format(key)
         ret = []
         for issue in r.lrange(key, start, stop):
             j = r.hgetall(issue)
@@ -53,4 +39,3 @@ class RedisAdapter(object):
     def get_least_issues():
         return construct_issue_list_from_range("least-updated-issues")
 
-redis_connection = RedisAdapter()

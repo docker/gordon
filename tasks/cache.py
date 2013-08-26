@@ -76,6 +76,9 @@ def closed_issues():
     closed_issues = filter_keys("issue:*", lambda x: obj_from_key(x).state == "closed")
     return closed_issues
 
+def commits():
+    commits = filter_keys("commit:*", lambda x: obj_from_key(x))
+
 def oldest(lst):
     return sorted(lst, key=lambda x: x.created_at)
     
@@ -102,12 +105,39 @@ def least_pulls():
     ls = [obj_from_key(z) for z in op]
     create_view('least-updated-pulls', least_updated(ls))
 
+def issues_closed_since(start=0, days=7):
+    cl = closed_issues()
+    ls = [obj_from_key(z) for z in cl]
+    create_view('issues-closed-since-{0}-{1}'.format(start, days), filter_since(ls, start, days))
+
+def issues_opened_since(start=0, days=7):
+    cl = open_issues()
+    ls = [obj_from_key(z) for z in cl]
+    create_view('issues-open-since-{0}-{1}'.format(start, days), filter_since(ls, start, days))
+
+def unassigned_pulls():
+    up = open_pulls()
+    ls = [obj_from_key(z) for z in up]
+    create_view('unassigned-prs', filter(lambda x: x.assignee is not None, ls))
+
+def filter_since(ls, start, total_days=7):
+    from datetime import timedelta
+    from datetime import date
+    if start == 0:
+        base = date.today()
+    else:
+        base = date.today() - timedelta(start)
+    date_range = [(base - timedelta(days=x)).isoformat() for x in range(0,total_days)]
+    return filter(lambda x: x.closed_at.split("T",1)[0] in date_range, ls)
+
 
 def create_view(key, lst):
+    #lst should have objects which have a __key__ method.
     r.delete(key)
     for i in lst:
         k = i.__key__()
         r.rpush(key, k)
+    
 
 
 def build_cache():
@@ -131,4 +161,3 @@ def build_cache():
 
     add("unique-committers-count", "1", {'total': str(len(ranked_committers(commits)))})
     add("total-commits", "1", {'total': str(len(commits))})
-    add('github-cache', '1', {'last_updated': datetime.now()})

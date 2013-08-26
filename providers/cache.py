@@ -11,3 +11,4 @@ def retrieve_view(key, start=0, stop=4):
 def obj_from_key(key):
     if "issue:" in key or "pull:" in key:
         return Issue().from_dict(redis_connection.hgetall(key))
+

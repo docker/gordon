@@ -1,13 +1,16 @@
 from datetime import datetime
 
 class Issue(object):
-    def __init__(self, number=None, title=None, created_at=None, updated_at=None, closed_at=None, state=None):
+    def __init__(self, number=None, title=None, created_at=None, updated_at=None, closed_at=None, state=None, assignee=None):
         self.number = number
         self.title = title
         self.created_at = created_at
         self.updated_at = updated_at
         self.closed_at = closed_at
         self.state = state
+        self.assignee = assignee
+        if self.created_at:
+            self.age = self.age()
 
     def age(self):
         delta = (datetime.strptime(self.created_at, '%Y-%m-%dT%H:%M:%SZ') - datetime.now()).days
@@ -27,12 +30,26 @@ class Issue(object):
         self.closed_at = data.get('closed_at')
         self.age = self.age()
         self.state = data.get('state')
+        self.assignee = data.get('assignee')
         return self
 
+class IssueCollection(object):
+    def __init__(self, this_week_count=None, last_week_count=None):
+        print "initialized"
+        self.this_week_count = str(this_week_count)
+        self.last_week_count = str(last_week_count)
+        self.difference = self.calculate_difference()
 
-class Cache(object):
-    def __init__(self, last_updated):
-        self.last_updated = None
+
+    def calculate_difference(self):
+        if self.last_week_count == 0:
+            return 100
+        # ;\
+        a = float(self.last_week_count) - float(self.this_week_count)
+        ret = (a / float(self.last_week_count)) * 100
+        return "%.2f" % ret
+
+
 
 
 class Committer(object):

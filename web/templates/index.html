@@ -1,0 +1,211 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Nick Stinemates">
+
+    <link href="/static/css/pure-min.css" rel="stylesheet">
+
+    <script type="text/javascript" src="/static/js/google.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script> 
+    <script src="http://use.typekit.net/ajf8ggy.js"></script>
+    <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+
+    <title>Docker Hub</title>
+    <style>
+      html, body {
+        height: 100%;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        font-family: 'Roboto';
+      }
+
+      .l-box {
+        padding: 10px;
+      }
+
+
+      .light-g-r {
+        background: #0e90d2;
+      }
+
+      .dark-g-r {
+        background: #005F8F;
+      }
+      
+      .l-box p {
+        margin: .2em 0;
+      }
+
+      .main-body{
+        display: table;
+        height: 100%;
+      }
+
+      .pad-top {
+        padding-top: 40px;
+      }
+      
+      .block {
+        display: table-row;
+        height: 1px;
+      }
+      
+      .footer {
+        background:black;
+        color:white;
+      }
+
+      .footer p {
+        padding-left: 20px;
+      }
+      
+      .footer a {
+        text-decoration: none;
+        color: white;
+      }
+
+      .push {
+        height: auto;
+      }
+
+      .gh-box {
+        width: 98%;
+        padding: 10px;
+      }
+
+      .gh-box h3 {
+        color: black;
+        font-size: 1.7em;
+        margin: 10px;
+      }
+
+      .gh-box a {
+        padding-left: 5px;
+        color: #0e90d2;
+      }
+
+      .gh-box p {
+        padding-left: 20px;
+      }
+      
+
+      .gh-box span.pure-button {
+        padding: .2em;
+        background: #0e90d2;
+        color: white;
+        cursor: default;
+      }
+
+      .pure-g-r {
+        padding: 10px;
+      }
+    </style>
+
+  </head>
+
+  <body>
+
+<div class="main-body pad-top">
+      {% include 'nav.html' %}
+
+      <div class="content">
+        <div class="pure-g-r light-g-r">
+          <div class="pure-u-1-5">
+            <div class="l-box" >
+              <h3>This week</h1>
+            </div>
+          </div>
+          <div class="pure-u-1-5">
+            <div class="l-box">
+              <h3><span style="color:white">20</span> Issues Opened (<span style="color:rgb(182, 255, 182)">20</span>)</h3>
+            </div>
+          </div>
+          <div class="pure-u-1-5">
+            <div class="l-box">
+              <h3><span style="color:white">20</span> Pulls Opened (<span style="color:rgb(182, 255, 182)">+15%</span>)</h3>
+            </div>
+          </div>
+          <div class="pure-u-1-5">
+            <div class="l-box">
+              <h3><span style="color:white">201</span> Pulls Merged (<span style="color:rgb(255, 144, 144)">-15%</span>)</h3>
+            </div>
+          </div>
+          <div class="pure-u-1-5">
+            <div class="l-box">
+              <h3><span style="color:white">{{ issue_closed_collection.this_week_count }}</span> Issues Closed (<span style="color:rgb(182, 255, 182)">{{ issue_closed_collection.difference }}%</span>)</h3>
+            </div>
+          </div>
+        </div>
+        <div class="pure-g-r">
+          <div class="pure-u-1-2">
+            <div class="l-box gh-box ">
+              <h3>Dusty Issues</h3>
+                {% for issue in oldest_issues %}
+                <p>
+                <span class="pure-button"> {{ issue.age }}d</span><a href="http://github.com/dotcloud/docker/issues/{{issue.number}}">{{ issue.title }}</a> (#{{ issue.number }})
+
+                </p>
+                {% endfor %}
+            </div>
+          </div>
+
+          <div class="pure-u-1-2">
+            <div class="l-box gh-box ">
+              <h3>Issues That Need &#9825;</h3>
+                {% for issue in attention_issues %}
+                <p>
+                  <span class="pure-button"> {{ issue.age }}d</span><a href="http://github.com/dotcloud/docker/issues/{{issue.number}}">{{ issue.title }}</a> (#{{ issue.number }}) 
+                </p>
+                {% endfor %}
+            </div>
+          </div>
+
+          <div class="pure-u-1-2">
+            <div class="l-box gh-box">
+                <h3>Dusty Pull Requests</h3>
+                {% for pull in oldest_pulls %}
+                <p>
+                  <span class="pure-button"> {{ pull.age }}d</span><a href="http://github.com/dotcloud/docker/pull/{{pull.number}}">{{ pull.title }}</a> (#{{ pull.number}}) 
+                </p>
+                {% endfor %}
+            </div>
+          </div>
+
+          <div class="pure-u-1-2">
+            <div class="l-box gh-box">
+              <h3>Pull Requests That Need &#9825;</h3>
+                {% for pull in attention_pulls %}
+                <p>
+                  <span class="pure-button"> {{ pull.age }}d</span><a href="http://github.com/dotcloud/docker/pull/{{pull.number}}">{{ pull.title }}</a> (#{{pull.number}}) 
+                </p>
+                {% endfor %}
+              </ol>
+            </div>
+          </div>
+        </div>
+  </div>
+
+  <div class="footer block">
+    <p>&copy; <a href="http://dotcloud.com">dotCloud</a> | </p>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $("#refresh-button").click(function() {
+    $.ajax({
+      url: '/cache',
+      type: 'GET',
+      dataType: 'json'
+      }).done(function(response) {
+        window.reload();
+        console.log(response);
+      });
+  });
+</script>
+
+</body>
+</html>

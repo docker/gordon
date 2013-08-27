@@ -9,6 +9,7 @@ from tasks.cache import issues_closed_since
 from tasks.cache import issues_opened_since
 from tasks.cache import unassigned_pulls
 
+#add top issue closer
 #base stuff
 
 #cache_issues()

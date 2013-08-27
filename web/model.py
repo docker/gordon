@@ -36,14 +36,14 @@ class Issue(object):
 class IssueCollection(object):
     def __init__(self, this_week_count=None, last_week_count=None):
         print "initialized"
-        self.this_week_count = str(this_week_count)
-        self.last_week_count = str(last_week_count)
+        self.this_week_count = this_week_count
+        self.last_week_count = last_week_count
         self.difference = self.calculate_difference()
 
 
     def calculate_difference(self):
-        if self.last_week_count == 0:
-            return 100
+        if self.last_week_count == 0 or self.this_week_count == 0:
+            return 'N/A'
         # ;\
         a = float(self.last_week_count) - float(self.this_week_count)
         ret = (a / float(self.last_week_count)) * 100

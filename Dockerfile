@@ -9,4 +9,4 @@ run pip install -r /website/requirements.txt
 
 expose 5000
 
-cmd ["python", "website/server.py"]
+cmd ["python", "website/web/server.py"]

@@ -1,6 +1,9 @@
 from flask import render_template
+from flask import request
 from controller import IssueController as IC
 from controller import IssueCollectionController as ICC
+from controller import ApiController 
+from api.router import route_and_handle
 
 def index():
     c = None
@@ -16,6 +19,12 @@ def index():
             issue_closed_collection = icc.get_issues_closed_count(),
             cache = c,
             )
+
+def hook():
+    api = ApiController()
+    data = api.route(request.headers, request.json)
+
+
 
 def robot():
     return render_template("robot.html")

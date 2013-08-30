@@ -1,6 +1,16 @@
 from providers.cache import retrieve_view as rv
+from api.router import route_and_handle
 from model import IssueCollection
-# should probably move this over to providers/cache.
+
+
+class ApiController(object):
+    def __init__(self):
+        pass
+
+    def route(self, request):
+        ret = route_and_handle(request)
+
+        return ret
 
 
 class IssueController(object):

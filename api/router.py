@@ -1,19 +1,6 @@
-from adapters import ActionAdapter #, ForcedAdapter, ForkeeAdapter
+from adapters import PullRequestAdapter
 
-def route_and_handle(request):
-    print "i'm routing!"
-    if request.get("action"):
-        a = ActionAdapter()
-        a.handle()
-
-    try:
-        print request["action"]
-    except:
-        try:
-            print request["forced"]
-        except:
-            print request["forkee"]
-
-
-    return {"success": "success"}
-    
+def route_and_handle(headers, body):
+    hooktype = headers.get('X-Github-Event')
+    if hooktype == "pull_request":
+        pr = PullRequestAdapter().handle(body)

@@ -1,4 +1,5 @@
 from flask import render_template
+from flask import jsonify
 from flask import request
 from controller import IssueController as IC
 from controller import IssueCollectionController as ICC
@@ -23,6 +24,7 @@ def index():
 def hook():
     api = ApiController()
     data = api.route(request.headers, request.json)
+    return jsonify(success="success")
 
 
 

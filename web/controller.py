@@ -7,8 +7,8 @@ class ApiController(object):
     def __init__(self):
         pass
 
-    def route(self, request):
-        ret = route_and_handle(request)
+    def route(self, headers, request):
+        ret = route_and_handle(headers, request)
 
         return ret
 

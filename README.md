@@ -13,9 +13,9 @@ Gordon is a multi-function robot. If you're contributing to Docker, his goal is 
 
 # Components
 
-## IRC Precense
+## IRC Precence
 
-## Web Precense
+## Web Precence
 
 ## GitHub WebHooks
 

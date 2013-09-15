@@ -28,7 +28,6 @@ The GitHub API is feature rich and allows for immense workflow customization/int
 
 Out of box, Gordon offers
 
-* Contributor License Agreement and/or Certificate of D validation per commit.
 * Automatic Pull Request Assignment to Maintainers
 * Caching of data in realtime, as opposed polling
 

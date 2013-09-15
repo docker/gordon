@@ -9,11 +9,8 @@ class AutomaticPR(object):
         pass
 
     def event_fired(self, content):
-        # if it is anything other than action = created, don't do shit.
-        """
         if content.get('action') != "created":
             return
-        """
         branch = content.get('pull_request').get('head').get('ref')
         base_url = "http://raw.github.com/{0}/{1}".format("keeb/docker-build", branch)
         repo = git.get_repo()

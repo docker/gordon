@@ -6,7 +6,7 @@ def auth_git():
 
 def get_repo():
     g = auth_git()
-    docker_repo = g.get_repo("keeb/docker-build")
+    docker_repo = g.get_repo(properties.get('GITHUB_REPO'))
     return docker_repo
 
 def create_comment(number, body, *args, **kwargs):
@@ -16,14 +16,14 @@ def create_comment(number, body, *args, **kwargs):
     
 def assign_issue(number, user):
     g = auth_git()
-    r = g.get_repo('keeb/docker-build')
+    r = g.get_repo(properties.get('GITHUB_REPO'))
     i = r.get_issue(number)
     u = g.get_user(user)
     i.edit(assignee=u)
 
 def update_status(commit_id, state, **kwargs):
     g = auth_git()
-    repo = g.get_repo("keeb/docker-build")
+    repo = g.get_repo(properties.get('GITHUB_REPO'))
     commit = repo.get_commit(commit_id)
     commit.create_status(state, **kwargs)
     print "created status.."

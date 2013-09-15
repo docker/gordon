@@ -12,5 +12,4 @@ def route_and_handle(headers, body):
         pr.handle(body)
     elif hooktype == "push":
         pu = PushAdapter()
-        pu.add_listener(CLAPushListener())
         pu.handle(body)

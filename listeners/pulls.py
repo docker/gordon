@@ -3,6 +3,7 @@ import operator
 from urllib import urlopen
 from adapters import git
 from adapters.git import assign_issue
+from web.config import properties
 
 class AutomaticPR(object):
     def __init__(self):
@@ -11,8 +12,9 @@ class AutomaticPR(object):
     def event_fired(self, content):
         if content.get('action') != "created":
             return
+        repo_name = properties.get('GITHUB_REPO')
         branch = content.get('pull_request').get('head').get('ref')
-        base_url = "http://raw.github.com/{0}/{1}".format("keeb/docker-build", branch)
+        base_url = "http://raw.github.com/{0}/{1}".format(repo_name, branch)
         repo = git.get_repo()
 
         num = content.get('pull_request').get('number')

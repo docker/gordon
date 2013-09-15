@@ -6,8 +6,7 @@ def auth_git():
 
 def get_repo():
     g = auth_git()
-    org = g.get_organization("dotcloud")
-    docker_repo = org.get_repo("docker")
+    docker_repo = g.get_repo("keeb/docker-build")
     return docker_repo
 
 def create_comment(number, body, *args, **kwargs):
@@ -15,6 +14,12 @@ def create_comment(number, body, *args, **kwargs):
     pull = repo.get_pul(number)
     pull.create_comment(body, *args, **kwargs)
     
+def assign_issue(number, user):
+    g = auth_git()
+    r = g.get_repo('keeb/docker-build')
+    i = r.get_issue(number)
+    u = g.get_user(user)
+    i.edit(assignee=u)
 
 def update_status(commit_id, state, **kwargs):
     g = auth_git()

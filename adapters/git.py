@@ -13,7 +13,7 @@ def get_repo():
 
 def create_comment(number, body, *args, **kwargs):
     repo = get_repo()
-    pull = repo.get_pul(number)
+    pull = repo.get_issue(number)
     pull.create_comment(body, *args, **kwargs)
     
 def assign_issue(number, user):

@@ -6,6 +6,8 @@ from controller import IssueCollectionController as ICC
 from controller import ApiController 
 from api.router import route_and_handle
 
+from web.app import sentry
+
 def index():
     c = None
     ic = IC()
@@ -23,6 +25,7 @@ def index():
 
 def hook():
     api = ApiController()
+    sentry.captureMessage('received a hook with the following: \n{0}'.format(request.json))
     data = api.route(request.headers, request.json)
     return jsonify(success="success")
 

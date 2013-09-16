@@ -1,6 +1,8 @@
 from github import Github as git
 from config import properties
 
+from web.app import sentry
+
 def auth_git():
     return git(properties.get('GITHUB_USERNAME'), properties.get('GITHUB_PASSWORD'), timeout=3000)
 
@@ -18,6 +20,7 @@ def assign_issue(number, user):
     g = auth_git()
     r = g.get_repo(properties.get('GITHUB_REPO'))
     i = r.get_issue(number)
+    sentry.captureMessage('assigning issue#{0} to {1} on repo {2}'.format(number, user, properties.get('GITHUB_REPO')))
     u = g.get_user(user)
     i.edit(assignee=u)
 

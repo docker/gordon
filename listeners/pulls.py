@@ -3,6 +3,7 @@ import operator
 from urllib import urlopen
 from adapters import git
 from adapters.git import assign_issue
+from adapters.git import create_comment
 
 from web.config import properties
 from web.app import sentry
@@ -54,5 +55,6 @@ class AutomaticPR(object):
         maintainer_handle = maintainer.split('@')[2].strip()[:-1]
         sentry.captureMessage('read MAINTAINER from {0} and maintainer handle is {1}'.format(url, maintainer_handle))
         assign_issue(num, maintainer_handle)
+        create_comment(num, 'cc @{0}, this issue was automatically assigned to you by Gordon'.format(maintainer_handle))
 
 

@@ -1,4 +1,4 @@
 Flask==0.10.1
 PyGithub==1.17.0
 redis==2.7.6
-requests
+raven[flask]

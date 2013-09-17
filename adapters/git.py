@@ -1,6 +1,6 @@
 from github import Github as git
-from config import properties
 
+from web.config import properties
 from web.app import sentry
 
 def auth_git():
@@ -8,6 +8,7 @@ def auth_git():
 
 def get_repo():
     g = auth_git()
+    sentry.captureMessage('getting repo {0}'.format(properties.get('GITHUB_REPO')))
     docker_repo = g.get_repo(properties.get('GITHUB_REPO'))
     return docker_repo
 

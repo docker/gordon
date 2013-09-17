@@ -32,7 +32,7 @@ class AutomaticPR(object):
         for f in files:
             sentry.captureMessage('working on file: {0}'.format(f.filename))
             if "/" in f.filename:
-                dire = ''.join(f.filename.split("/")[:-1])
+                dire = '/'.join(f.filename.split("/")[:-1])
             else:
                 dire = '/'
 
@@ -51,7 +51,11 @@ class AutomaticPR(object):
         sorted_ire.reverse()
         p = sorted_ire[0][0]
         url = '{0}/{1}/MAINTAINERS'.format(base_url, p)
+        print url
         maintainer = urlopen(url).readline()
+        if not maintainer:
+            sentry.captureMessage('maintainer not found for url {0}'.format(url))
+            return
         maintainer_handle = maintainer.split('@')[2].strip()[:-1]
         sentry.captureMessage('read MAINTAINER from {0} and maintainer handle is {1}'.format(url, maintainer_handle))
         assign_issue(num, maintainer_handle)

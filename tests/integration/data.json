@@ -1,8 +1,5 @@
 {"action": "opened",
     "pull_request": {
-        "head": {
-            "ref": "fix-typo-docs"
-        },
         "number": 1909
     }
 }

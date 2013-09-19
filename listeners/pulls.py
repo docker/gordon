@@ -15,10 +15,6 @@ class AutomaticPR(object):
     def event_fired(self, content):
         if content.get('action') != "opened":
             return
-        repo_name = properties.get('GITHUB_REPO')
-        branch = content.get('pull_request').get('head').get('ref')
-        base_url = "http://raw.github.com/{0}/{1}".format(repo_name, branch)
-        sentry.captureMessage('base_url is {0}'.format(base_url))
 
         repo = git.get_repo()
         num = content.get('pull_request').get('number')
@@ -50,15 +46,26 @@ class AutomaticPR(object):
         sorted_ire = sorted(ire.iteritems(), key=operator.itemgetter(1))
         sorted_ire.reverse()
         p = sorted_ire[0][0]
-        url = '{0}/{1}/MAINTAINERS'.format(base_url, p)
-        print url
+        maintainer_handle = self._get_maintainer(p)
+        assign_issue(num, maintainer_handle)
+        create_comment(num, 'cc @{0}, this issue was automatically assigned to you by Gordon'.format(maintainer_handle))
+
+    def _get_maintainer(self, f):
+        repo_name = properties.get('GITHUB_REPO')
+
+        base_url = "http://raw.github.com/{0}/master".format(repo_name)
+        sentry.captureMessage('base_url is {0}'.format(base_url))
+        # based on a path, traverse it backward until you find the maintainer.
+        url = '{0}/{1}/MAINTAINERS'.format(base_url, f)
         maintainer = urlopen(url).readline()
         if not maintainer:
             sentry.captureMessage('maintainer not found for url {0}'.format(url))
-            return
-        maintainer_handle = maintainer.split('@')[2].strip()[:-1]
-        sentry.captureMessage('read MAINTAINER from {0} and maintainer handle is {1}'.format(url, maintainer_handle))
-        assign_issue(num, maintainer_handle)
-        create_comment(num, 'cc @{0}, this issue was automatically assigned to you by Gordon'.format(maintainer_handle))
+            self._get_maintainer('/'.join(f.split('/')[:-1]))
+        try:
+            maintainer_handle = maintainer.split('@')[2].strip()[:-1]
+            sentry.captureMessage('read MAINTAINER from {0} and maintainer handle is {1}'.format(url, maintainer_handle))
+            return maintainer_handle
+        except:
+            sentry.captureMessage('unable to parse maintainer file. invalid format.')
 
 

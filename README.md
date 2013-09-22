@@ -1,6 +1,6 @@
 # Gordon
 
-Gordon is a multi-function robot providing a precence via the Web and IRC, while exposing a rich API. If you're contributing to Docker, his goal is to make your life AWESOME.
+Gordon is a multi-function robot providing a presence via the Web and IRC, while exposing a rich API. If you're contributing to Docker, his goal is to make your life AWESOME.
 
 If you're interested in how non-trivial projects can be built, tested, distributed, or run via Docker, Gordon's goal is to provide a reference which adheres to the best practices developed by the community in these areas.
 
@@ -31,14 +31,14 @@ Out of box, Gordon offers
 * Automatic Pull Request Assignment to Maintainers
 * Caching of data in realtime, as opposed polling
 
-## IRC Precence
+## IRC Presence
 
 Command line automation and stewardship is the name of the game. 
 
 ### Standup (Bender)
 
 
-## Web Precence
+## Web Presence
 
 ## Caching
 

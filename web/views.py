@@ -5,6 +5,7 @@ from controller import IssueController as IC
 from controller import IssueCollectionController as ICC
 from controller import ApiController 
 from api.router import route_and_handle
+from adapters.git import get_maintainer
 
 from web.app import sentry
 
@@ -29,6 +30,9 @@ def hook():
     data = api.route(request.headers, request.json)
     return jsonify(success="success")
 
+
+def maintainers(issue):
+    return jsonify(maintainer=get_maintainer(int(issue)))
 
 
 def robot():

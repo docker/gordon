@@ -6,25 +6,17 @@ from urllib import urlopen
 from web.config import properties
 from web.app import sentry
 
-def get_maintainer(issue):
-    repo = get_repo()
-    p = repo.get_pull(issue)
-    files = p.get_files()
 
-    fd = {}
+
+def rank_file_changes(flist):
     ire = {}
 
-    for f in files:
+    for f in flist:
         sentry.captureMessage('working on file: {0}'.format(f.filename))
         if "/" in f.filename:
             dire = '/'.join(f.filename.split("/")[:-1])
         else:
             dire = '/'
-
-        fd[f.filename] = {'changes': f.changes,
-                'additions': f.additions,
-                'deletions': f.deletions,
-                }
 
         if ire.get(dire):
             score = ire.get(dire) + f.changes
@@ -33,11 +25,30 @@ def get_maintainer(issue):
         ire[dire] = score
 
     sorted_ire = sorted(ire.iteritems(), key=operator.itemgetter(1))
-    sorted_ire.reverse()
-    p = sorted_ire[0][0]
+    return sorted_ire.reverse()
 
-    maintainer_handle = _maintainer_from_path(p)
+
+
+def get_lead_maintainer(issue):
+    repo = get_repo()
+    p = repo.get_pull(issue)
+    files = p.get_files()
+    lead_maintainer_file = rank_file_changes(files)[0][0]
+    maintainer_handle = _maintainer_from_path(lead_maintainer_file)
     return maintainer_handle
+
+def get_all_maintainers(issue):
+    repo = get_repo()
+    p = repo.get_pull(issue)
+    files = p.get_files()
+    maintainers = []
+    for f in files:
+        maintainer = _maintainer_from_path(f.filename)
+        print maintainer
+        if maintainer not in maintainers:
+            maintainers.append(maintainer)
+    return maintainers
+
 
 
 def _maintainer_from_path(path):

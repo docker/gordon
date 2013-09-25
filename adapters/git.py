@@ -4,15 +4,12 @@ from github import Github as git
 from urllib import urlopen
 
 from web.config import properties
-from web.app import sentry
-
-
 
 def rank_file_changes(flist):
     ire = {}
 
     for f in flist:
-        sentry.captureMessage('working on file: {0}'.format(f.filename))
+        print('working on file: {0}'.format(f.filename))
         if "/" in f.filename:
             dire = '/'.join(f.filename.split("/")[:-1])
         else:
@@ -25,8 +22,8 @@ def rank_file_changes(flist):
         ire[dire] = score
 
     sorted_ire = sorted(ire.iteritems(), key=operator.itemgetter(1))
-    return sorted_ire.reverse()
-
+    sorted_ire.reverse()
+    return sorted_ire
 
 
 def get_lead_maintainer(issue):
@@ -43,7 +40,11 @@ def get_all_maintainers(issue):
     files = p.get_files()
     maintainers = []
     for f in files:
-        maintainer = _maintainer_from_path(f.filename)
+        if "/" in f.filename:
+            fpath = '/'.join(f.filename.split("/")[:-1])
+        else:
+            fpath = '/'
+        maintainer = _maintainer_from_path(fpath)
         print maintainer
         if maintainer not in maintainers:
             maintainers.append(maintainer)
@@ -55,19 +56,19 @@ def _maintainer_from_path(path):
     repo_name = properties.get('GITHUB_REPO')
 
     base_url = "http://raw.github.com/{0}/master".format(repo_name)
-    sentry.captureMessage('base_url is {0}'.format(base_url))
+    print('base_url is {0}'.format(base_url))
     # based on a path, traverse it backward until you find the maintainer.
     url = '{0}/{1}/MAINTAINERS'.format(base_url, path)
+    print url
     maintainer = urlopen(url).readline()
-    if not maintainer:
-        sentry.captureMessage('maintainer not found for url {0}'.format(url))
-        _maintainer_from_path('/'.join(f.split('/')[:-1]))
     try:
+        print maintainer
         maintainer_handle = maintainer.split('@')[2].strip()[:-1]
-        sentry.captureMessage('read MAINTAINER from {0} and maintainer handle is {1}'.format(url, maintainer_handle))
+        print('read MAINTAINER from {0} and maintainer handle is {1}'.format(url, maintainer_handle))
         return maintainer_handle
     except:
-        sentry.captureMessage('unable to parse maintainer file. invalid format.')
+        print('unable to parse maintainer file. invalid format.')
+        return _maintainer_from_path('/'.join(path.split('/')[:-1]))
 
 
 def auth_git():
@@ -75,7 +76,7 @@ def auth_git():
 
 def get_repo():
     g = auth_git()
-    sentry.captureMessage('getting repo {0}'.format(properties.get('GITHUB_REPO')))
+    print('getting repo {0}'.format(properties.get('GITHUB_REPO')))
     docker_repo = g.get_repo(properties.get('GITHUB_REPO'))
     return docker_repo
 
@@ -88,7 +89,7 @@ def assign_issue(number, user):
     g = auth_git()
     r = g.get_repo(properties.get('GITHUB_REPO'))
     i = r.get_issue(number)
-    sentry.captureMessage('assigning issue#{0} to {1} on repo {2}'.format(number, user, properties.get('GITHUB_REPO')))
+    print('assigning issue#{0} to {1} on repo {2}'.format(number, user, properties.get('GITHUB_REPO')))
     u = g.get_user(user)
     i.edit(assignee=u)
 

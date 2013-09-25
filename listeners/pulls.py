@@ -2,7 +2,7 @@ import operator
 
 from urllib import urlopen
 from adapters import git
-from adapters.git import get_maintainers
+from adapters.git import get_all_maintainers
 from adapters.git import assign_issue
 from adapters.git import create_comment
 

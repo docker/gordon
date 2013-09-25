@@ -7,7 +7,6 @@ from adapters.git import assign_issue
 from adapters.git import create_comment
 
 from web.config import properties
-from web.app import sentry
 
 class AutomaticPR(object):
     def __init__(self):

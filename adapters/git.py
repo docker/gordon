@@ -21,8 +21,7 @@ def rank_file_changes(flist):
             score = f.changes
         ire[dire] = score
 
-    sorted_ire = sorted(ire.iteritems(), key=operator.itemgetter(1))
-    sorted_ire.reverse()
+    sorted_ire = sorted(ire.iteritems(), key=operator.itemgetter(1), reverse=True)
     return sorted_ire
 
 

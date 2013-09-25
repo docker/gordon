@@ -10,9 +10,8 @@ def rank_file_changes(flist):
 
     for f in flist:
         print('working on file: {0}'.format(f.filename))
-        if "/" in f.filename:
-            dire = '/'.join(f.filename.split("/")[:-1])
-        else:
+        dire = posixpath.dirname(f.filename)
+        if dire == '':
             dire = '/'
 
         if ire.get(dire):
@@ -39,9 +38,8 @@ def get_all_maintainers(issue):
     files = p.get_files()
     maintainers = []
     for f in files:
-        if "/" in f.filename:
-            fpath = '/'.join(f.filename.split("/")[:-1])
-        else:
+        fpath = posixpath.dirname(f.filename)
+        if fpath == '':
             fpath = '/'
         maintainer = _maintainer_from_path(fpath)
         print maintainer

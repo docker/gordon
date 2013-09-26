@@ -8,7 +8,6 @@ from api.router import route_and_handle
 from adapters.git import get_lead_maintainer
 from adapters.git import get_all_maintainers
 
-from web.app import sentry
 
 def index():
     c = None
@@ -27,7 +26,6 @@ def index():
 
 def hook():
     api = ApiController()
-    sentry.captureMessage('received a hook with the following: \n{0}'.format(request.json))
     data = api.route(request.headers, request.json)
     return jsonify(success="success")
 

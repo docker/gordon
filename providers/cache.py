@@ -1,6 +1,7 @@
 import redis 
-from config import properties
-from model import Issue
+
+from web.config import properties
+from web.model import Issue
 
 redis_connection = redis.StrictRedis(host=properties.get('REDIS_HOST'), port=int(properties.get('REDIS_PORT')))
 

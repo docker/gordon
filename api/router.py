@@ -1,7 +1,6 @@
 from adapters import PullRequestAdapter
 from adapters import PushAdapter
 
-from listeners.push import DCOPushListener
 from listeners.pulls import AutomaticPR
 from listeners.pulls import DCOPullListener
 

@@ -1,7 +1,7 @@
 from adapters import PullRequestAdapter
 from adapters import PushAdapter
 
-from listeners.push import CLAPushListener
+from listeners.push import DCOPushListener
 from listeners.pulls import AutomaticPR
 
 def route_and_handle(headers, body):
@@ -12,4 +12,5 @@ def route_and_handle(headers, body):
         pr.handle(body)
     elif hooktype == "push":
         pu = PushAdapter()
+        pu.add_listener(DCOPushListener())
         pu.handle(body)

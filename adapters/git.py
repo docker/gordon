@@ -48,6 +48,22 @@ def get_all_maintainers(issue):
             maintainers.append(maintainer)
     return maintainers
 
+def check_pull_request_commits(number):
+    repo = get_repo()
+    pull = repo.get_pull(number)
+    for commit in pull.get_commits():
+        email = commit.commit.author.email
+        real_name = commit.commit.author.name
+        message = commit.commit.message
+        signed = 'Signed-off-by: {0} <{1}>'.format(real_name, email) in message
+        if signed:
+            commit.create_status('success', description='Commit has been properly signed.')
+        else:
+            commit.create_status('error', description='This commit has not been properly signed. Please rebase with a proper commit message.')
+
+        
+
+
 
 
 def _maintainer_from_path(path):

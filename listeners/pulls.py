@@ -18,7 +18,7 @@ class AutomaticPR(object):
             return
 
         num = content.get('pull_request').get('number')
-        maintainers = get_maintainers(num)
+        maintainers = get_all_maintainers(num)
         assign_issue(num, 'gordn')
         create_comment(num, 'Hey {0}, can you please take a look at this issue?', ','.join(maintainers))
 

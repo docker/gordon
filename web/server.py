@@ -4,6 +4,10 @@ from views import hook
 from views import maintainers
 from views import lead_maintainer
 
+import logging
+
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
+
 app.add_url_rule('/', 'index', index, methods=['GET'])
 app.add_url_rule('/', 'hook', hook, methods=['POST'])
 app.add_url_rule('/maintainers/<issue>', 'maintainer', maintainers, methods=['GET'])

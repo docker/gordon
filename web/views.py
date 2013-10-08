@@ -8,6 +8,9 @@ from api.router import route_and_handle
 from adapters.git import get_lead_maintainer
 from adapters.git import get_all_maintainers
 
+import logging
+log = logging.getLogger('views')
+
 
 def index():
     c = None
@@ -38,4 +41,3 @@ def maintainers(issue):
 
 def robot():
     return render_template("robot.html")
-

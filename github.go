@@ -1,6 +1,7 @@
 package pulls
 
 import (
+	"fmt"
 	gh "github.com/crosbymichael/octokat"
 	"strconv"
 )
@@ -26,9 +27,24 @@ func (m *Maintainer) Repository() (*gh.Repository, error) {
 func (m *Maintainer) GetPullRequests(state string) ([]*gh.PullRequest, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{
-		"state": state,
+		"state":    state,
+		"per_page": "100",
 	}
-	return m.client.PullRequests(m.repo, o)
+	prevSize := -1
+	page := 1
+	allPRs := []*gh.PullRequest{}
+	for len(allPRs) != prevSize {
+		o.QueryParams["page"] = strconv.Itoa(page)
+		if prs, err := m.client.PullRequests(m.repo, o); err != nil {
+			return nil, err
+		} else {
+			prevSize = len(allPRs)
+			allPRs = append(allPRs, prs...)
+			page += 1
+		}
+		fmt.Printf(".")
+	}
+	return allPRs, nil
 }
 
 // Return a single pull request
@@ -51,6 +67,7 @@ func (m *Maintainer) GetNoMergePullRequests() ([]*gh.PullRequest, error) {
 	out := []*gh.PullRequest{}
 	for _, pr := range prs {
 		fullPr, err := m.GetPullRequest(strconv.Itoa(pr.Number))
+		fmt.Printf(".")
 		if err != nil {
 			return nil, err
 		}
@@ -58,6 +75,7 @@ func (m *Maintainer) GetNoMergePullRequests() ([]*gh.PullRequest, error) {
 			out = append(out, fullPr)
 		}
 	}
+	fmt.Printf("%c[2K\r", 27)
 	return out, nil
 }
 

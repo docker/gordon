@@ -60,3 +60,8 @@ func (m *Maintainer) GetNoMergePullRequests() ([]*gh.PullRequest, error) {
 	}
 	return out, nil
 }
+
+// Add a comment to an existing pull request
+func (m *Maintainer) AddComment(pr *gh.PullRequest, comment string) (gh.Comment, error) {
+	return m.client.AddComment(m.repo, strconv.Itoa(pr.Number), comment)
+}

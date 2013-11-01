@@ -6,6 +6,7 @@ import (
 
 type Line interface {
 	Display(x, y int, s *Screen) error
+	Highlight(x, y int, s *Screen) error
 }
 
 type TextLine struct {
@@ -22,6 +23,14 @@ func (l *TextLine) Display(x, y int, s *Screen) error {
 		termbox.SetCell(i, y, ' ', l.Forground, l.Background)
 	}
 	return nil
+}
+
+func (l *TextLine) Highlight(x, y int, s *Screen) error {
+	cb := l.Background
+	l.Background = termbox.ColorYellow
+	err := l.Display(x, y, s)
+	l.Background = cb
+	return err
 }
 
 type Cell struct {
@@ -54,6 +63,19 @@ func (c *Cell) Display(x, y int) error {
 		termbox.SetCell(i, y, ' ', c.Forground, c.Background)
 	}
 	return nil
+}
+func (l *CellLine) Highlight(x, y int, s *Screen) error {
+	cb := l.Cells[0].Background
+
+	for _, c := range l.Cells {
+		c.Background = termbox.ColorYellow
+	}
+	err := l.Display(x, y, s)
+	for _, c := range l.Cells {
+		c.Background = cb
+	}
+
+	return err
 }
 
 type CellLine struct {

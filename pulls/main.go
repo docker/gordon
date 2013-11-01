@@ -40,10 +40,13 @@ func displayInteractiveCmd(c *cli.Context) {
 		Forground:  termbox.ColorWhite,
 		Background: termbox.ColorYellow,
 	}
+	cursor := term.NewCursor(screen)
+
 	pulls, err := m.GetPullRequests("open")
 	if err != nil {
 		writeError("%s\n", err)
 	}
+
 	for _, pr := range pulls {
 		cells := &term.CellLine{make([]*term.Cell, 3)}
 
@@ -74,6 +77,10 @@ func displayInteractiveCmd(c *cli.Context) {
 			switch ev.Key {
 			case termbox.KeyEsc, termbox.KeyCtrlQ:
 				goto exit
+			case termbox.KeyArrowDown:
+				cursor.Down()
+			case termbox.KeyArrowUp:
+				cursor.Up()
 			}
 		}
 	}

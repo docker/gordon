@@ -53,8 +53,7 @@ func (m *Maintainer) GetPullRequest(number string) (*gh.PullRequest, error) {
 }
 
 // Return all comments for an issue or pull request
-func (m *Maintainer) GetComments(pr *gh.PullRequest) ([]gh.Comment, error) {
-	number := strconv.Itoa(pr.Number)
+func (m *Maintainer) GetComments(number string) ([]gh.Comment, error) {
 	return m.client.Comments(m.repo, number, nil)
 }
 
@@ -80,15 +79,15 @@ func (m *Maintainer) GetNoMergePullRequests() ([]*gh.PullRequest, error) {
 }
 
 // Add a comment to an existing pull request
-func (m *Maintainer) AddComment(pr *gh.PullRequest, comment string) (gh.Comment, error) {
-	return m.client.AddComment(m.repo, strconv.Itoa(pr.Number), comment)
+func (m *Maintainer) AddComment(number, comment string) (gh.Comment, error) {
+	return m.client.AddComment(m.repo, number, comment)
 }
 
 // Merge a pull request
-func (m *Maintainer) MergePullRequest(pr *gh.PullRequest, comment string) (gh.Merge, error) {
+func (m *Maintainer) MergePullRequest(number, comment string) (gh.Merge, error) {
 	o := &gh.Options{}
 	o.Params = map[string]string{
 		"commit_message": comment,
 	}
-	return m.client.MergePullRequest(m.repo, strconv.Itoa(pr.Number), o)
+	return m.client.MergePullRequest(m.repo, number, o)
 }

@@ -102,20 +102,16 @@ func authCmd(c *cli.Context) {
 
 func manageCommentsCmd(c *cli.Context) {
 	number := c.Args()[0]
-	pr, err := m.GetPullRequest(number)
-	if err != nil {
-		writeError("%s\n", err)
-	}
 	if c.Bool("add") {
 		comment := c.Args()[1]
-		cmt, err := m.AddComment(pr, comment)
+		cmt, err := m.AddComment(number, comment)
 		if err != nil {
 			writeError("%s\n", err)
 		}
 		fmt.Fprintf(os.Stdout, "Comment added at %s\n", cmt.CreatedAt.Format(defaultTimeFormat))
 		return
 	} else {
-		comments, err := m.GetComments(pr)
+		comments, err := m.GetComments(number)
 		if err != nil {
 			writeError("%s\n", err)
 		}
@@ -128,15 +124,8 @@ func manageCommentsCmd(c *cli.Context) {
 }
 
 func mergeCmd(c *cli.Context) {
-	pr, err := m.GetPullRequest(c.Args()[0])
-	if err != nil {
-		writeError("%s\n", err)
-	}
-	if pr.Merged {
-		fmt.Fprintf(os.Stderr, "Pull reqeust %d has already been merged\n", pr.Number)
-		os.Exit(1)
-	}
-	merge, err := m.MergePullRequest(pr, c.String("m"))
+	number := c.Args()[0]
+	merge, err := m.MergePullRequest(number, c.String("m"))
 	if err != nil {
 		writeError("%s\n", err)
 	}

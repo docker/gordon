@@ -22,20 +22,19 @@ var (
 )
 
 func listOpenPullsCmd(c *cli.Context) {
-	var (
-		pulls []*gh.PullRequest
-		err   error
-	)
-
-	if c.Bool("no-merge") {
-		pulls, err = m.GetNoMergePullRequests()
-	} else {
-		pulls, err = m.GetPullRequests("open")
+	prs, err := m.GetPullRequests("open")
+	filters := &pulls.ShowFilters{
+		NoMerge:  c.Bool("no-merge"),
+		FromUser: c.String("user"),
 	}
-	if err != nil {
-		writeError("Error getting pull requests %s", err)
+	if filters.NoMerge || filters.FromUser != "" {
+		prs, err = m.FilterPullRequests(prs, filters)
+		if err != nil {
+			writeError("Error getting pull requests %s", err)
+		}
 	}
-	displayPullRequests(pulls)
+	fmt.Printf("%c[2K\r", 27)
+	displayPullRequests(prs)
 }
 
 func listClosedPullsCmd(c *cli.Context) {
@@ -146,6 +145,7 @@ func loadCommands(app *cli.App) {
 			Action:    listOpenPullsCmd,
 			Flags: []cli.Flag{
 				cli.BoolFlag{"no-merge", "display only prs that cannot be merged"},
+				cli.StringFlag{"user", "", "display only prs from <user>"},
 			},
 		},
 		{

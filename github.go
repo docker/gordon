@@ -57,12 +57,13 @@ func (m *Maintainer) GetComments(number string) ([]gh.Comment, error) {
 	return m.client.Comments(m.repo, number, nil)
 }
 
-// Return all pull requests that cannot be merged cleanly
-func (m *Maintainer) GetNoMergePullRequests() ([]*gh.PullRequest, error) {
-	prs, err := m.GetPullRequests("open")
-	if err != nil {
-		return nil, err
-	}
+type ShowFilters struct {
+	NoMerge  bool
+	FromUser string
+}
+
+// Filter pull requests
+func (m *Maintainer) FilterPullRequests(prs []*gh.PullRequest, filters *ShowFilters) ([]*gh.PullRequest, error) {
 	out := []*gh.PullRequest{}
 	for _, pr := range prs {
 		fullPr, err := m.GetPullRequest(strconv.Itoa(pr.Number))
@@ -70,11 +71,11 @@ func (m *Maintainer) GetNoMergePullRequests() ([]*gh.PullRequest, error) {
 		if err != nil {
 			return nil, err
 		}
-		if !fullPr.Mergeable {
+		if (!filters.NoMerge || (filters.NoMerge && !fullPr.Mergeable)) &&
+			(filters.FromUser == "" || (filters.FromUser == fullPr.User.Login)) {
 			out = append(out, fullPr)
 		}
 	}
-	fmt.Printf("%c[2K\r", 27)
 	return out, nil
 }
 

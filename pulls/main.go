@@ -34,7 +34,7 @@ func listOpenPullsCmd(c *cli.Context) {
 		}
 	}
 	fmt.Printf("%c[2K\r", 27)
-	displayPullRequests(prs)
+	displayPullRequests(prs, c.Bool("no-trunc"))
 }
 
 func listClosedPullsCmd(c *cli.Context) {
@@ -42,13 +42,16 @@ func listClosedPullsCmd(c *cli.Context) {
 	if err != nil {
 		writeError("Error getting pull requests %s", err)
 	}
-	displayPullRequests(pulls)
+	displayPullRequests(pulls, c.Bool("no-trunc"))
 }
 
-func displayPullRequests(pulls []*gh.PullRequest) {
+func displayPullRequests(pulls []*gh.PullRequest, notrunc bool) {
 	w := newTabwriter()
 	for _, p := range pulls {
-		fmt.Fprintf(w, "%d\t%s\t%s\n", p.Number, truncate(p.Title), p.CreatedAt.Format(defaultTimeFormat))
+		if !notrunc {
+			p.Title = truncate(p.Title)
+		}
+		fmt.Fprintf(w, "%d\t%s\t%s\n", p.Number, p.Title, p.CreatedAt.Format(defaultTimeFormat))
 	}
 
 	if err := w.Flush(); err != nil {
@@ -144,6 +147,7 @@ func loadCommands(app *cli.App) {
 			Usage:     "List all open pull requests for the current repository",
 			Action:    listOpenPullsCmd,
 			Flags: []cli.Flag{
+				cli.BoolFlag{"no-trunc", "don't truncate pr name"},
 				cli.BoolFlag{"no-merge", "display only prs that cannot be merged"},
 				cli.StringFlag{"user", "", "display only prs from <user>"},
 			},
@@ -153,6 +157,9 @@ func loadCommands(app *cli.App) {
 			ShortName: "c",
 			Usage:     "List all closed pull requests for the current repository",
 			Action:    listClosedPullsCmd,
+			Flags: []cli.Flag{
+				cli.BoolFlag{"no-trunc", "don't truncate pr name"},
+			},
 		},
 		{
 			Name:      "show",

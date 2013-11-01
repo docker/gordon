@@ -86,5 +86,9 @@ func (m *Maintainer) AddComment(pr *gh.PullRequest, comment string) (gh.Comment,
 
 // Merge a pull request
 func (m *Maintainer) MergePullRequest(pr *gh.PullRequest, comment string) (gh.Merge, error) {
-	return m.client.MergePullRequest(m.repo, strconv.Itoa(pr.Number), nil)
+	o := &gh.Options{}
+	o.Params = map[string]string{
+		"commit_message": comment,
+	}
+	return m.client.MergePullRequest(m.repo, strconv.Itoa(pr.Number), o)
 }

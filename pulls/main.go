@@ -127,6 +127,27 @@ func manageCommentsCmd(c *cli.Context) {
 	}
 }
 
+func mergeCmd(c *cli.Context) {
+	pr, err := m.GetPullRequest(c.Args()[0])
+	if err != nil {
+		writeError("%s\n", err)
+	}
+	if pr.Merged {
+		fmt.Fprintf(os.Stderr, "Pull reqeust %d has already been merged\n", pr.Number)
+		os.Exit(1)
+	}
+	merge, err := m.MergePullRequest(pr, "")
+	if err != nil {
+		writeError("%s\n", err)
+	}
+	if merge.Merged {
+		fmt.Fprintf(os.Stdout, "%s", brush.Green(merge.Message))
+	} else {
+		fmt.Fprintf(os.Stderr, "%s", brush.Red(merge.Message))
+		os.Exit(1)
+	}
+}
+
 func loadCommands(app *cli.App) {
 	app.Commands = []cli.Command{
 		{
@@ -167,11 +188,16 @@ func loadCommands(app *cli.App) {
 		{
 			Name:      "comments",
 			ShortName: "cmt",
-			Usage:     "Show and manage comments for a pull reqeust",
+			Usage:     "Show and manage comments for a pull request",
 			Action:    manageCommentsCmd,
 			Flags: []cli.Flag{
-				cli.BoolFlag{"add", "add a comment to the pull reqeust"},
+				cli.BoolFlag{"add", "add a comment to the pull request"},
 			},
+		},
+		{
+			Name:   "merge",
+			Usage:  "Merge a pull request",
+			Action: mergeCmd,
 		},
 	}
 }

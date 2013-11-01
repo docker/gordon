@@ -83,3 +83,8 @@ func (m *Maintainer) GetNoMergePullRequests() ([]*gh.PullRequest, error) {
 func (m *Maintainer) AddComment(pr *gh.PullRequest, comment string) (gh.Comment, error) {
 	return m.client.AddComment(m.repo, strconv.Itoa(pr.Number), comment)
 }
+
+// Merge a pull request
+func (m *Maintainer) MergePullRequest(pr *gh.PullRequest, comment string) (gh.Merge, error) {
+	return m.client.MergePullRequest(m.repo, strconv.Itoa(pr.Number), nil)
+}

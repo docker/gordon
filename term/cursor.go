@@ -13,7 +13,7 @@ type Cursor struct {
 func NewCursor(s *Screen) *Cursor {
 	c := &Cursor{
 		X:      0,
-		Y:      0,
+		Y:      1,
 		screen: s,
 	}
 	c.set()
@@ -26,7 +26,7 @@ func (c *Cursor) Down() {
 		c.currentLine.Display(0, c.Y, c.screen)
 	}
 	c.Y++
-	l := c.screen.Lines[c.Y]
+	l := c.screen.Lines[c.Y-1]
 	if err := l.Highlight(0, c.Y, c.screen); err != nil {
 		panic(err)
 	}
@@ -39,7 +39,7 @@ func (c *Cursor) Up() {
 		c.currentLine.Display(0, c.Y, c.screen)
 	}
 	c.Y--
-	l := c.screen.Lines[c.Y]
+	l := c.screen.Lines[c.Y-1]
 	if err := l.Highlight(0, c.Y, c.screen); err != nil {
 		panic(err)
 	}
@@ -48,14 +48,10 @@ func (c *Cursor) Up() {
 	c.set()
 }
 
-func (c *Cursor) Left() {
-	c.X--
-	c.set()
-}
-
-func (c *Cursor) Right() {
-	c.X++
-	c.set()
+func (c *Cursor) Select() {
+	if s, ok := c.currentLine.(Selectable); ok {
+		s.Select(c.screen)
+	}
 }
 
 func (c *Cursor) set() {

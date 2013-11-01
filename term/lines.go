@@ -9,6 +9,10 @@ type Line interface {
 	Highlight(x, y int, s *Screen) error
 }
 
+type Selectable interface {
+	Select(s *Screen) error
+}
+
 type TextLine struct {
 	Content               string
 	Forground, Background termbox.Attribute
@@ -82,6 +86,11 @@ type CellLine struct {
 	Cells []*Cell
 }
 
+type SelectableCell struct {
+	line   *CellLine
+	Action func() error
+}
+
 func (l *CellLine) Display(x, y int, s *Screen) error {
 	for _, c := range l.Cells {
 		if err := c.Display(x, y); err != nil {
@@ -91,6 +100,21 @@ func (l *CellLine) Display(x, y int, s *Screen) error {
 		x = x + writeSpacer(x, y, s)
 	}
 	return nil
+}
+
+func (c *SelectableCell) Select(screen *Screen) error {
+	if err := screen.Clear(); err != nil {
+		return err
+	}
+	return c.Action()
+}
+
+func (c *SelectableCell) Display(x, y int, s *Screen) error {
+	return c.line.Display(x, y, s)
+}
+
+func (c *SelectableCell) Highlight(x, y int, s *Screen) error {
+	return c.line.Highlight(x, y, s)
 }
 
 func writeSpacer(x, y int, s *Screen) int {

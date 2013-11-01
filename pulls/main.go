@@ -81,6 +81,8 @@ func displayInteractiveCmd(c *cli.Context) {
 				cursor.Down()
 			case termbox.KeyArrowUp:
 				cursor.Up()
+			case termbox.KeyEnter:
+				cursor.Select()
 			}
 		}
 	}

@@ -14,7 +14,7 @@ type Maintainer struct {
 func NewMaintainer(client *gh.Client, org, repo string) (*Maintainer, error) {
 	return &Maintainer{
 		repo:   gh.Repo{Name: repo, UserName: org},
-		client: gh.NewClient(),
+		client: client,
 	}, nil
 }
 
@@ -42,6 +42,7 @@ func (m *Maintainer) GetComments(pr *gh.PullRequest) ([]gh.Comment, error) {
 	return m.client.Comments(m.repo, number, nil)
 }
 
+// Return all pull requests that cannot be merged cleanly
 func (m *Maintainer) GetNoMergePullRequests() ([]*gh.PullRequest, error) {
 	prs, err := m.GetPullRequests("open")
 	if err != nil {

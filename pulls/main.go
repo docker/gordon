@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/crosbymichael/maintainer"
 	gh "github.com/crosbymichael/octokat"
+	"github.com/crosbymichael/pulls"
 	"os"
 	"path"
 	"strconv"
@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	m          *maintainer.Maintainer
+	m          *pulls.Maintainer
 	configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
 )
 
@@ -147,8 +147,8 @@ func loadCommands(app *cli.App) {
 func main() {
 	app := cli.NewApp()
 
-	app.Name = "maintainer"
-	app.Usage = "Manage github issues and prs"
+	app.Name = "pulls"
+	app.Usage = "Manage github pull requets"
 	app.Version = "0.0.1"
 
 	client := gh.NewClient()
@@ -162,7 +162,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	t, err := maintainer.NewMaintainer(client, org, name)
+	t, err := pulls.NewMaintainer(client, org, name)
 	if err != nil {
 		panic(err)
 	}

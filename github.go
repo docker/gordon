@@ -1,4 +1,4 @@
-package maintainer
+package pulls
 
 import (
 	gh "github.com/crosbymichael/octokat"

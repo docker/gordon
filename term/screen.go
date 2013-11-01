@@ -41,21 +41,21 @@ func (s *Screen) Display() error {
 	if err := s.Clear(); err != nil {
 		return nil
 	}
-	x := 0
+	y := 0
 	if s.Header != nil {
-		if err := s.Header.Display(x, 0, s); err != nil {
+		if err := s.Header.Display(0, y, s); err != nil {
 			return err
 		}
-		x++
+		y++
 	}
 	for _, l := range s.Lines {
-		if err := l.Display(x, 0, s); err != nil {
+		if err := l.Display(0, y, s); err != nil {
 			return err
 		}
-		x++
+		y++
 	}
 	if s.Footer != nil {
-		if err := s.Footer.Display(s.Height-1, 0, s); err != nil {
+		if err := s.Footer.Display(0, s.Height-1, s); err != nil {
 			return err
 		}
 	}

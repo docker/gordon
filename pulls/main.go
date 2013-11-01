@@ -10,6 +10,7 @@ import (
 	"github.com/nsf/termbox-go"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -32,6 +33,26 @@ func displayInteractiveCmd(c *cli.Context) {
 	screen, err := term.NewScreen(termbox.ColorGreen, termbox.ColorDefault)
 	if err != nil {
 		writeError("%s\n", err)
+	}
+
+	screen.Header = &term.TextLine{
+		Content:    "    Pulls: Pull Request Management",
+		Forground:  termbox.ColorWhite,
+		Background: termbox.ColorYellow,
+	}
+	pulls, err := m.GetPullRequests("open")
+	if err != nil {
+		writeError("%s\n", err)
+	}
+	for _, pr := range pulls {
+		cells := &term.CellLine{make([]*term.Cell, 3)}
+
+		cells.Cells[0] = term.NewCell(strconv.Itoa(pr.Number), termbox.ColorDefault, termbox.ColorBlack)
+		cells.Cells[1] = term.NewCell(pr.Title, termbox.ColorDefault, termbox.ColorBlack)
+		cells.Cells[1].Width = 50
+		cells.Cells[2] = term.NewCell(pr.CreatedAt.Format(defaultTimeFormat), termbox.ColorDefault, termbox.ColorBlack)
+
+		screen.Lines = append(screen.Lines, cells)
 	}
 
 	if err := screen.Display(); err != nil {

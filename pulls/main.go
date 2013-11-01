@@ -33,7 +33,7 @@ func listOpenPullsCmd(c *cli.Context) {
 		pulls, err = m.GetPullRequests("open")
 	}
 	if err != nil {
-		writeError("Error getting pull requests %s", err)
+		writeError("Error getting pull requests %s\n", err)
 	}
 	displayPullRequests(pulls)
 }
@@ -41,7 +41,7 @@ func listOpenPullsCmd(c *cli.Context) {
 func listClosedPullsCmd(c *cli.Context) {
 	pulls, err := m.GetPullRequests("closed")
 	if err != nil {
-		writeError("Error getting pull requests %s", err)
+		writeError("Error getting pull requests %s\n", err)
 	}
 	displayPullRequests(pulls)
 }
@@ -53,14 +53,17 @@ func displayPullRequests(pulls []*gh.PullRequest) {
 	}
 
 	if err := w.Flush(); err != nil {
-		writeError("%s", err)
+		writeError("%s\n", err)
 	}
 }
 
 func showPullRequestCmd(c *cli.Context) {
+	if len(c.Args()) == 0 {
+		writeError("%s\n", fmt.Errorf("Missing PR number"))
+	}
 	pr, err := m.GetPullRequest(c.Args()[0])
 	if err != nil {
-		writeError("%s", err)
+		writeError("%s\n", err)
 	}
 	displayPullRequest(pr)
 }
@@ -79,7 +82,7 @@ func displayPullRequest(pr *gh.PullRequest) {
 func repositoryInfoCmd(c *cli.Context) {
 	r, err := m.Repository()
 	if err != nil {
-		writeError("%s", err)
+		writeError("%s\n", err)
 	}
 	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
 }
@@ -87,7 +90,7 @@ func repositoryInfoCmd(c *cli.Context) {
 func authCmd(c *cli.Context) {
 	if token := c.String("add"); token != "" {
 		if err := saveConfig(Config{token}); err != nil {
-			writeError("%s", err)
+			writeError("%s\n", err)
 		}
 		return
 	}
@@ -101,6 +104,9 @@ func authCmd(c *cli.Context) {
 }
 
 func manageCommentsCmd(c *cli.Context) {
+	if len(c.Args()) == 0 {
+		writeError("%s\n", fmt.Errorf("Missing PR number"))
+	}
 	number := c.Args()[0]
 	pr, err := m.GetPullRequest(number)
 	if err != nil {

@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	defultTimeFormat = time.RFC822
+	defaultTimeFormat = time.RFC822
 )
 
 var (
@@ -33,7 +33,7 @@ func listOpenPullsCmd(c *cli.Context) {
 		pulls, err = m.GetPullRequests("open")
 	}
 	if err != nil {
-		writeError("Error getting pull reqeusts %s", err)
+		writeError("Error getting pull requests %s", err)
 	}
 	displayPullRequests(pulls)
 }
@@ -41,7 +41,7 @@ func listOpenPullsCmd(c *cli.Context) {
 func listClosedPullsCmd(c *cli.Context) {
 	pulls, err := m.GetPullRequests("closed")
 	if err != nil {
-		writeError("Error getting pull reqeusts %s", err)
+		writeError("Error getting pull requests %s", err)
 	}
 	displayPullRequests(pulls)
 }
@@ -49,7 +49,7 @@ func listClosedPullsCmd(c *cli.Context) {
 func displayPullRequests(pulls []*gh.PullRequest) {
 	w := newTabwriter()
 	for _, p := range pulls {
-		fmt.Fprintf(w, "%d\t%s\t%s\n", p.Number, truncate(p.Title), p.CreatedAt.Format(defultTimeFormat))
+		fmt.Fprintf(w, "%d\t%s\t%s\n", p.Number, truncate(p.Title), p.CreatedAt.Format(defaultTimeFormat))
 	}
 
 	if err := w.Flush(); err != nil {
@@ -81,7 +81,7 @@ func displayPullRequest(pr *gh.PullRequest) {
 	} else {
 		fmt.Fprintln(os.Stdout, "Comments:\n")
 		for _, c := range comments {
-			fmt.Fprintf(os.Stdout, "@%s %s\n%s\n", brush.Red(c.User.Login), c.CreatedAt.Format(defultTimeFormat), c.Body)
+			fmt.Fprintf(os.Stdout, "@%s %s\n%s\n", brush.Red(c.User.Login), c.CreatedAt.Format(defaultTimeFormat), c.Body)
 			fmt.Fprint(os.Stdout, "\n\n")
 		}
 	}

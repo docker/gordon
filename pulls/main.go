@@ -136,14 +136,14 @@ func mergeCmd(c *cli.Context) {
 		fmt.Fprintf(os.Stderr, "Pull reqeust %d has already been merged\n", pr.Number)
 		os.Exit(1)
 	}
-	merge, err := m.MergePullRequest(pr, "")
+	merge, err := m.MergePullRequest(pr, c.String("m"))
 	if err != nil {
 		writeError("%s\n", err)
 	}
 	if merge.Merged {
-		fmt.Fprintf(os.Stdout, "%s", brush.Green(merge.Message))
+		fmt.Fprintf(os.Stdout, "%s\n", brush.Green(merge.Message))
 	} else {
-		fmt.Fprintf(os.Stderr, "%s", brush.Red(merge.Message))
+		fmt.Fprintf(os.Stderr, "%s\n", brush.Red(merge.Message))
 		os.Exit(1)
 	}
 }
@@ -198,6 +198,9 @@ func loadCommands(app *cli.App) {
 			Name:   "merge",
 			Usage:  "Merge a pull request",
 			Action: mergeCmd,
+			Flags: []cli.Flag{
+				cli.StringFlag{"m", "", "commit message for merge"},
+			},
 		},
 	}
 }

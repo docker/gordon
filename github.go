@@ -22,15 +22,6 @@ func (m *Maintainer) Repository() (*gh.Repository, error) {
 	return m.client.Repository(m.repo, nil)
 }
 
-// Return all issues
-func (m *Maintainer) GetIssues(state string) ([]gh.Issue, error) {
-	o := &gh.Options{}
-	o.QueryParams = map[string]string{
-		"state": state,
-	}
-	return m.client.Issues(m.repo, o)
-}
-
 // Return all pull requests
 func (m *Maintainer) GetPullRequests(state string) ([]*gh.PullRequest, error) {
 	o := &gh.Options{}
@@ -46,7 +37,8 @@ func (m *Maintainer) GetPullRequest(number string) (*gh.PullRequest, error) {
 }
 
 // Return all comments for an issue or pull request
-func (m *Maintainer) GetComments(number string) ([]gh.Comment, error) {
+func (m *Maintainer) GetComments(pr *gh.PullRequest) ([]gh.Comment, error) {
+	number := strconv.Itoa(pr.Number)
 	return m.client.Comments(m.repo, number, nil)
 }
 

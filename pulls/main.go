@@ -7,7 +7,6 @@ import (
 	"github.com/crosbymichael/pulls"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -21,32 +20,7 @@ var (
 	configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
 )
 
-func listIssues(c *cli.Context) {
-	issues, err := m.GetIssues("open")
-	if err != nil {
-		writeError("Error getting issues %s", err)
-	}
-
-	w := newTabwriter()
-	for _, i := range issues {
-		fmt.Fprintf(w, "%d\t%s\t%s\n", i.Number, truncate(i.Title), i.CreatedAt.Format(defultTimeFormat))
-	}
-	if err := w.Flush(); err != nil {
-		writeError("%s", err)
-	}
-}
-
-func listPulls(c *cli.Context) {
-	if len(c.Args()) > 0 {
-		prId := c.Args()[0]
-		pr, err := m.GetPullRequest(prId)
-		if err != nil {
-			writeError("%s", err)
-		}
-		displayPullRequest(pr)
-		return
-	}
-
+func listOpenPullsCmd(c *cli.Context) {
 	var (
 		pulls []*gh.PullRequest
 		err   error
@@ -55,12 +29,23 @@ func listPulls(c *cli.Context) {
 	if c.Bool("no-merge") {
 		pulls, err = m.GetNoMergePullRequests()
 	} else {
-		pulls, err = m.GetPullRequests(c.String("state"))
+		pulls, err = m.GetPullRequests("open")
 	}
 	if err != nil {
 		writeError("Error getting pull reqeusts %s", err)
 	}
+	displayPullRequests(pulls)
+}
 
+func listClosedPullsCmd(c *cli.Context) {
+	pulls, err := m.GetPullRequests("open")
+	if err != nil {
+		writeError("Error getting pull reqeusts %s", err)
+	}
+	displayPullRequests(pulls)
+}
+
+func displayPullRequests(pulls []*gh.PullRequest) {
 	w := newTabwriter()
 	for _, p := range pulls {
 		fmt.Fprintf(w, "%d\t%s\t%s\n", p.Number, truncate(p.Title), p.CreatedAt.Format(defultTimeFormat))
@@ -69,6 +54,14 @@ func listPulls(c *cli.Context) {
 	if err := w.Flush(); err != nil {
 		writeError("%s", err)
 	}
+}
+
+func showPullRequestCmd(c *cli.Context) {
+	pr, err := m.GetPullRequest(c.Args()[0])
+	if err != nil {
+		writeError("%s", err)
+	}
+	displayPullRequest(pr)
 }
 
 func displayPullRequest(pr *gh.PullRequest) {
@@ -81,7 +74,7 @@ func displayPullRequest(pr *gh.PullRequest) {
 	}
 	fmt.Fprintf(os.Stdout, "Description:\n\n%s\n\n", strings.Join(lines, "\n"))
 
-	comments, err := m.GetComments(strconv.Itoa(pr.Number))
+	comments, err := m.GetComments(pr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting comments: %s\n", err)
 	} else {
@@ -93,53 +86,66 @@ func displayPullRequest(pr *gh.PullRequest) {
 	}
 }
 
-func repositoryInfo(c *cli.Context) {
+func repositoryInfoCmd(c *cli.Context) {
 	r, err := m.Repository()
 	if err != nil {
 		writeError("%s", err)
 	}
-	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nWatchers: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
+	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
 }
 
-func addToken(c *cli.Context) {
-	if len(c.Args()) == 0 {
-		fmt.Fprintln(os.Stderr, "Missing token")
-		os.Exit(1)
+func authCmd(c *cli.Context) {
+	if token := c.String("add"); token != "" {
+		if err := saveConfig(Config{token}); err != nil {
+			writeError("%s", err)
+		}
+		return
 	}
-	token := c.Args()[0]
-	if err := saveConfig(Config{token}); err != nil {
-		writeError("%s", err)
+	// Display token and user information
+	if config := loadConfig(); config.Token != "" {
+		fmt.Fprintf(os.Stdout, "Token: %s\n", config.Token)
+	} else {
+		fmt.Fprintf(os.Stderr, "No token registered\n")
+		os.Exit(1)
 	}
 }
 
 func loadCommands(app *cli.App) {
 	app.Commands = []cli.Command{
 		{
-			Name:      "issues",
-			ShortName: "i",
-			Usage:     "List all issues for the current repository",
-			Action:    listIssues,
-		},
-		{
-			Name:      "pulls",
-			ShortName: "p",
-			Usage:     "List all pull requests for the current repository",
-			Action:    listPulls,
+			Name:      "open",
+			ShortName: "o",
+			Usage:     "List all open pull requests for the current repository",
+			Action:    listOpenPullsCmd,
 			Flags: []cli.Flag{
-				cli.StringFlag{"state", "open", "state of the pull request (open, closed)"},
 				cli.BoolFlag{"no-merge", "display only prs that cannot be merged"},
 			},
 		},
 		{
-			Name:      "repository",
-			ShortName: "r",
-			Usage:     "List information about the current repository",
-			Action:    repositoryInfo,
+			Name:      "closed",
+			ShortName: "c",
+			Usage:     "List all closed pull requests for the current repository",
+			Action:    listClosedPullsCmd,
 		},
 		{
-			Name:   "add-token",
+			Name:      "show",
+			ShortName: "s",
+			Usage:     "Show the pull request based on the number",
+			Action:    showPullRequestCmd,
+		},
+		{
+			Name:      "repository",
+			ShortName: "repo",
+			Usage:     "List information about the current repository",
+			Action:    repositoryInfoCmd,
+		},
+		{
+			Name:   "auth",
 			Usage:  "Add a github token for authentication",
-			Action: addToken,
+			Action: authCmd,
+			Flags: []cli.Flag{
+				cli.StringFlag{"add", "", "add new token for authentication"},
+			},
 		},
 	}
 }

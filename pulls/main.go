@@ -6,6 +6,8 @@ import (
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
 	"github.com/crosbymichael/pulls"
+	"github.com/crosbymichael/pulls/term"
+	"github.com/nsf/termbox-go"
 	"os"
 	"path"
 	"strings"
@@ -20,6 +22,46 @@ var (
 	m          *pulls.Maintainer
 	configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
 )
+
+func displayInteractiveCmd(c *cli.Context) {
+	var err error
+	if err = term.Init(); err != nil {
+		writeError("%s\n", err)
+	}
+
+	screen, err := term.NewScreen(termbox.ColorGreen, termbox.ColorDefault)
+	if err != nil {
+		writeError("%s\n", err)
+	}
+
+	if err := screen.Display(); err != nil {
+		writeError("%s\n", err)
+	}
+
+	// Main event loop
+	for {
+		switch ev := term.Event(); ev.Type {
+		case termbox.EventError:
+			err = ev.Err
+			goto exit
+		case termbox.EventResize:
+			err = screen.Resize()
+			if err != nil {
+				goto exit
+			}
+		case termbox.EventKey:
+			switch ev.Key {
+			case termbox.KeyEsc, termbox.KeyCtrlQ:
+				goto exit
+			}
+		}
+	}
+exit:
+	screen.Close()
+	if err != nil {
+		writeError("%s\n", err)
+	}
+}
 
 func listOpenPullsCmd(c *cli.Context) {
 	prs, err := m.GetPullRequests("open")
@@ -190,6 +232,11 @@ func loadCommands(app *cli.App) {
 			Flags: []cli.Flag{
 				cli.StringFlag{"m", "", "commit message for merge"},
 			},
+		},
+		{
+			Name:   "interactive",
+			Action: displayInteractiveCmd,
+			Usage:  "Display an interactive screen",
 		},
 	}
 }

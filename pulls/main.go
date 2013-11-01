@@ -38,7 +38,7 @@ func listOpenPullsCmd(c *cli.Context) {
 }
 
 func listClosedPullsCmd(c *cli.Context) {
-	pulls, err := m.GetPullRequests("open")
+	pulls, err := m.GetPullRequests("closed")
 	if err != nil {
 		writeError("Error getting pull reqeusts %s", err)
 	}

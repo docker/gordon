@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/aybabtme/color/brush"
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
 	"github.com/crosbymichael/pulls"
@@ -65,7 +66,7 @@ func showPullRequestCmd(c *cli.Context) {
 }
 
 func displayPullRequest(pr *gh.PullRequest) {
-	fmt.Fprint(os.Stdout, "\033[1mPull Request:\033[0m\n")
+	fmt.Fprint(os.Stdout, brush.Green("Pull Request:"), "\n")
 	fmt.Fprintf(os.Stdout, "No: %d\nTitle: %s\n\n", pr.Number, pr.Title)
 
 	lines := strings.Split(pr.Body, "\n")
@@ -80,7 +81,7 @@ func displayPullRequest(pr *gh.PullRequest) {
 	} else {
 		fmt.Fprintln(os.Stdout, "Comments:\n")
 		for _, c := range comments {
-			fmt.Fprintf(os.Stdout, "\033[1m@%s\033[0m %s\n%s\n", c.User.Login, c.CreatedAt.Format(defultTimeFormat), c.Body)
+			fmt.Fprintf(os.Stdout, "@%s %s\n%s\n", brush.Red(c.User.Login), c.CreatedAt.Format(defultTimeFormat), c.Body)
 			fmt.Fprint(os.Stdout, "\n\n")
 		}
 	}

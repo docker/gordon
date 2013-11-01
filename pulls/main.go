@@ -74,17 +74,6 @@ func displayPullRequest(pr *gh.PullRequest) {
 		lines[i] = "\t" + l
 	}
 	fmt.Fprintf(os.Stdout, "Description:\n\n%s\n\n", strings.Join(lines, "\n"))
-
-	comments, err := m.GetComments(pr)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting comments: %s\n", err)
-	} else {
-		fmt.Fprintln(os.Stdout, "Comments:\n")
-		for _, c := range comments {
-			fmt.Fprintf(os.Stdout, "@%s %s\n%s\n", brush.Red(c.User.Login), c.CreatedAt.Format(defaultTimeFormat), c.Body)
-			fmt.Fprint(os.Stdout, "\n\n")
-		}
-	}
 }
 
 func repositoryInfoCmd(c *cli.Context) {
@@ -108,6 +97,33 @@ func authCmd(c *cli.Context) {
 	} else {
 		fmt.Fprintf(os.Stderr, "No token registered\n")
 		os.Exit(1)
+	}
+}
+
+func manageCommentsCmd(c *cli.Context) {
+	number := c.Args()[0]
+	pr, err := m.GetPullRequest(number)
+	if err != nil {
+		writeError("%s\n", err)
+	}
+	if c.Bool("add") {
+		comment := c.Args()[1]
+		cmt, err := m.AddComment(pr, comment)
+		if err != nil {
+			writeError("%s\n", err)
+		}
+		fmt.Fprintf(os.Stdout, "Comment added at %s\n", cmt.CreatedAt.Format(defaultTimeFormat))
+		return
+	} else {
+		comments, err := m.GetComments(pr)
+		if err != nil {
+			writeError("%s\n", err)
+		}
+		fmt.Fprintln(os.Stdout, "Comments:\n")
+		for _, c := range comments {
+			fmt.Fprintf(os.Stdout, "@%s %s\n%s\n", brush.Red(c.User.Login), c.CreatedAt.Format(defaultTimeFormat), c.Body)
+			fmt.Fprint(os.Stdout, "\n\n")
+		}
 	}
 }
 
@@ -146,6 +162,15 @@ func loadCommands(app *cli.App) {
 			Action: authCmd,
 			Flags: []cli.Flag{
 				cli.StringFlag{"add", "", "add new token for authentication"},
+			},
+		},
+		{
+			Name:      "comments",
+			ShortName: "cmt",
+			Usage:     "Show and manage comments for a pull reqeust",
+			Action:    manageCommentsCmd,
+			Flags: []cli.Flag{
+				cli.BoolFlag{"add", "add a comment to the pull reqeust"},
 			},
 		},
 	}

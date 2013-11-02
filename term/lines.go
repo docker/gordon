@@ -86,9 +86,16 @@ type CellLine struct {
 	Cells []*Cell
 }
 
-type SelectableCell struct {
-	line   *CellLine
+type SelectableLine struct {
+	line   Line
 	Action func() error
+}
+
+func NewSelectableLine(l Line, action func() error) Line {
+	return &SelectableLine{
+		line:   l,
+		Action: action,
+	}
 }
 
 func (l *CellLine) Display(x, y int, s *Screen) error {
@@ -102,18 +109,15 @@ func (l *CellLine) Display(x, y int, s *Screen) error {
 	return nil
 }
 
-func (c *SelectableCell) Select(screen *Screen) error {
-	if err := screen.Clear(); err != nil {
-		return err
-	}
+func (c *SelectableLine) Select(screen *Screen) error {
 	return c.Action()
 }
 
-func (c *SelectableCell) Display(x, y int, s *Screen) error {
+func (c *SelectableLine) Display(x, y int, s *Screen) error {
 	return c.line.Display(x, y, s)
 }
 
-func (c *SelectableCell) Highlight(x, y int, s *Screen) error {
+func (c *SelectableLine) Highlight(x, y int, s *Screen) error {
 	return c.line.Highlight(x, y, s)
 }
 

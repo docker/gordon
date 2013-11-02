@@ -34,7 +34,11 @@ func (s *Screen) Close() error {
 }
 
 func (s *Screen) Clear() error {
-	return termbox.Clear(s.DefaultForground, s.DefaultBackground)
+	err := termbox.Clear(s.DefaultForground, s.DefaultBackground)
+	if err != nil {
+		return err
+	}
+	return termbox.Flush()
 }
 
 func (s *Screen) Display() error {

@@ -55,7 +55,29 @@ func displayInteractiveCmd(c *cli.Context) {
 		cells.Cells[1].Width = 50
 		cells.Cells[2] = term.NewCell(pr.CreatedAt.Format(defaultTimeFormat), termbox.ColorDefault, termbox.ColorBlack)
 
-		screen.Lines = append(screen.Lines, cells)
+		selectable := term.NewSelectableLine(cells, func() error {
+			ppr := pr
+			cursor.Hide()
+			screen.Clear()
+
+			prScreen, err := term.NewScreen(termbox.ColorGreen, termbox.ColorDefault)
+			if err != nil {
+				return err
+			}
+
+			screen.Header = &term.TextLine{
+				Content:    fmt.Sprintf("Pull request %d: %s", ppr.Number, ppr.Title),
+				Forground:  termbox.ColorWhite,
+				Background: termbox.ColorYellow,
+			}
+
+			for _, bLine := range strings.Split(ppr.Body, "\n") {
+				prScreen.Lines = append(prScreen.Lines, &term.TextLine{Content: bLine})
+			}
+
+			return prScreen.Display()
+		})
+		screen.Lines = append(screen.Lines, selectable)
 	}
 
 	if err := screen.Display(); err != nil {

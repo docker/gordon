@@ -21,6 +21,10 @@ func NewCursor(s *Screen) *Cursor {
 	return c
 }
 
+func (c *Cursor) Hide() {
+	termbox.HideCursor()
+}
+
 func (c *Cursor) Down() {
 	if c.currentLine != nil {
 		c.currentLine.Display(0, c.Y, c.screen)

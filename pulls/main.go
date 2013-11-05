@@ -8,12 +8,6 @@ import (
 	"github.com/crosbymichael/pulls"
 	"os"
 	"path"
-	"strings"
-	"time"
-)
-
-const (
-	defaultTimeFormat = time.RFC822
 )
 
 var (
@@ -23,40 +17,20 @@ var (
 
 func listOpenPullsCmd(c *cli.Context) {
 	prs, err := m.GetPullRequests("open")
-	filters := &pulls.ShowFilters{
-		NoMerge:  c.Bool("no-merge"),
-		FromUser: c.String("user"),
-	}
-	if filters.NoMerge || filters.FromUser != "" {
-		prs, err = m.FilterPullRequests(prs, filters)
-		if err != nil {
-			writeError("Error getting pull requests %s", err)
-		}
-	}
-	fmt.Printf("%c[2K\r", 27)
-	displayPullRequests(prs, c.Bool("no-trunc"))
-}
-
-func listClosedPullsCmd(c *cli.Context) {
-	pulls, err := m.GetPullRequests("closed")
+	prs, err = m.FilterPullRequests(prs, c)
 	if err != nil {
 		writeError("Error getting pull requests %s", err)
 	}
-	displayPullRequests(pulls, c.Bool("no-trunc"))
+	fmt.Printf("%c[2K\r", 27)
+	pulls.DisplayPullRequests(c, prs, c.Bool("no-trunc"))
 }
 
-func displayPullRequests(pulls []*gh.PullRequest, notrunc bool) {
-	w := newTabwriter()
-	for _, p := range pulls {
-		if !notrunc {
-			p.Title = truncate(p.Title)
-		}
-		fmt.Fprintf(w, "%d\t%s\t%s\n", p.Number, p.Title, p.CreatedAt.Format(defaultTimeFormat))
+func listClosedPullsCmd(c *cli.Context) {
+	prs, err := m.GetPullRequests("closed")
+	if err != nil {
+		writeError("Error getting pull requests %s", err)
 	}
-
-	if err := w.Flush(); err != nil {
-		writeError("%s", err)
-	}
+	pulls.DisplayPullRequests(c, prs, c.Bool("no-trunc"))
 }
 
 func showPullRequestCmd(c *cli.Context) {
@@ -64,18 +38,7 @@ func showPullRequestCmd(c *cli.Context) {
 	if err != nil {
 		writeError("%s", err)
 	}
-	displayPullRequest(pr)
-}
-
-func displayPullRequest(pr *gh.PullRequest) {
-	fmt.Fprint(os.Stdout, brush.Green("Pull Request:"), "\n")
-	fmt.Fprintf(os.Stdout, "No: %d\nTitle: %s\n\n", pr.Number, pr.Title)
-
-	lines := strings.Split(pr.Body, "\n")
-	for i, l := range lines {
-		lines[i] = "\t" + l
-	}
-	fmt.Fprintf(os.Stdout, "Description:\n\n%s\n\n", strings.Join(lines, "\n"))
+	pulls.DisplayPullRequest(pr)
 }
 
 func repositoryInfoCmd(c *cli.Context) {
@@ -110,18 +73,14 @@ func manageCommentsCmd(c *cli.Context) {
 		if err != nil {
 			writeError("%s\n", err)
 		}
-		fmt.Fprintf(os.Stdout, "Comment added at %s\n", cmt.CreatedAt.Format(defaultTimeFormat))
+		pulls.DisplayCommentAdded(cmt)
 		return
 	} else {
 		comments, err := m.GetComments(number)
 		if err != nil {
 			writeError("%s\n", err)
 		}
-		fmt.Fprintln(os.Stdout, "Comments:\n")
-		for _, c := range comments {
-			fmt.Fprintf(os.Stdout, "@%s %s\n%s\n", brush.Red(c.User.Login), c.CreatedAt.Format(defaultTimeFormat), c.Body)
-			fmt.Fprint(os.Stdout, "\n\n")
-		}
+		pulls.DisplayComments(comments)
 	}
 }
 
@@ -142,36 +101,33 @@ func mergeCmd(c *cli.Context) {
 func loadCommands(app *cli.App) {
 	app.Commands = []cli.Command{
 		{
-			Name:      "open",
-			ShortName: "o",
-			Usage:     "List all open pull requests for the current repository",
-			Action:    listOpenPullsCmd,
+			Name:   "open",
+			Usage:  "List all open pull requests for the current repository",
+			Action: listOpenPullsCmd,
 			Flags: []cli.Flag{
 				cli.BoolFlag{"no-trunc", "don't truncate pr name"},
 				cli.BoolFlag{"no-merge", "display only prs that cannot be merged"},
+				cli.BoolFlag{"lgtm", "display the number of LGTM"},
 				cli.StringFlag{"user", "", "display only prs from <user>"},
 			},
 		},
 		{
-			Name:      "closed",
-			ShortName: "c",
-			Usage:     "List all closed pull requests for the current repository",
-			Action:    listClosedPullsCmd,
+			Name:   "closed",
+			Usage:  "List all closed pull requests for the current repository",
+			Action: listClosedPullsCmd,
 			Flags: []cli.Flag{
 				cli.BoolFlag{"no-trunc", "don't truncate pr name"},
 			},
 		},
 		{
-			Name:      "show",
-			ShortName: "s",
-			Usage:     "Show the pull request based on the number",
-			Action:    showPullRequestCmd,
+			Name:   "show",
+			Usage:  "Show the pull request based on the number",
+			Action: showPullRequestCmd,
 		},
 		{
-			Name:      "repository",
-			ShortName: "repo",
-			Usage:     "List information about the current repository",
-			Action:    repositoryInfoCmd,
+			Name:   "repo",
+			Usage:  "List information about the current repository",
+			Action: repositoryInfoCmd,
 		},
 		{
 			Name:   "auth",
@@ -182,10 +138,9 @@ func loadCommands(app *cli.App) {
 			},
 		},
 		{
-			Name:      "comments",
-			ShortName: "cmt",
-			Usage:     "Show and manage comments for a pull request",
-			Action:    manageCommentsCmd,
+			Name:   "comments",
+			Usage:  "Show and manage comments for a pull request",
+			Action: manageCommentsCmd,
 			Flags: []cli.Flag{
 				cli.BoolFlag{"add", "add a comment to the pull request"},
 			},

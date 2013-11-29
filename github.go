@@ -2,8 +2,10 @@ package pulls
 
 import (
 	"fmt"
+	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
 	"strconv"
+	"strings"
 )
 
 // Top level type that manages a repository
@@ -57,23 +59,38 @@ func (m *Maintainer) GetComments(number string) ([]gh.Comment, error) {
 	return m.client.Comments(m.repo, number, nil)
 }
 
-type ShowFilters struct {
-	NoMerge  bool
-	FromUser string
-}
-
 // Filter pull requests
-func (m *Maintainer) FilterPullRequests(prs []*gh.PullRequest, filters *ShowFilters) ([]*gh.PullRequest, error) {
+func (m *Maintainer) FilterPullRequests(prs []*gh.PullRequest, c *cli.Context) ([]*gh.PullRequest, error) {
 	out := []*gh.PullRequest{}
+	noMerge := c.Bool("no-merge")
+	fromUser := c.String("user")
+	lgtm := c.Bool("lgtm")
+
 	for _, pr := range prs {
-		fullPr, err := m.GetPullRequest(strconv.Itoa(pr.Number))
 		fmt.Printf(".")
-		if err != nil {
-			return nil, err
-		}
-		if (!filters.NoMerge || (filters.NoMerge && !fullPr.Mergeable)) &&
-			(filters.FromUser == "" || (filters.FromUser == fullPr.User.Login)) {
-			out = append(out, fullPr)
+		pr.ReviewComments = 0
+		if fromUser == "" || fromUser == pr.User.Login {
+			if noMerge {
+				pr, err := m.GetPullRequest(strconv.Itoa(pr.Number))
+				if err != nil {
+					return nil, err
+				}
+				if pr.Mergeable {
+					continue
+				}
+			}
+			if lgtm {
+				comments, err := m.GetComments(strconv.Itoa(pr.Number))
+				if err != nil {
+					return nil, err
+				}
+				for _, comment := range comments {
+					if strings.Contains(comment.Body, "LGTM") {
+						pr.ReviewComments += 1
+					}
+				}
+			}
+			out = append(out, pr)
 		}
 	}
 	return out, nil

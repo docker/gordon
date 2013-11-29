@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"text/tabwriter"
 )
 
 type Config struct {
@@ -23,17 +22,6 @@ type remote struct {
 func writeError(format string, err error) {
 	fmt.Fprintf(os.Stderr, format, err)
 	os.Exit(1)
-}
-
-func truncate(s string) string {
-	if len(s) > 30 {
-		s = s[:30] + "..."
-	}
-	return s
-}
-
-func newTabwriter() *tabwriter.Writer {
-	return tabwriter.NewWriter(os.Stdout, 8, 1, 3, ' ', 0)
 }
 
 func getOriginUrl() (string, string, error) {

@@ -3,16 +3,11 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 )
-
-type Config struct {
-	Token string
-}
 
 type remote struct {
 	Name string
@@ -64,36 +59,4 @@ func getRemotes() ([]remote, error) {
 	}
 
 	return out, nil
-}
-
-func loadConfig() Config {
-	var config Config
-	f, err := os.Open(configPath)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			writeError("%s", err)
-		}
-	} else {
-		defer f.Close()
-
-		dec := json.NewDecoder(f)
-		if err := dec.Decode(&config); err != nil {
-			writeError("%s", err)
-		}
-	}
-	return config
-}
-
-func saveConfig(config Config) error {
-	f, err := os.OpenFile(configPath, os.O_CREATE|os.O_RDWR, 0600)
-	if err != nil {
-		return nil
-	}
-	defer f.Close()
-
-	enc := json.NewEncoder(f)
-	if err := enc.Encode(config); err != nil {
-		return err
-	}
-	return nil
 }

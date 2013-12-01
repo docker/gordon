@@ -64,6 +64,15 @@ func checkoutCmd(c *cli.Context) {
 	}
 }
 
+// Approve a pr by adding a LGTM to the comments
+func approveCmd(c *cli.Context) {
+	number := c.Args().First()
+	if _, err := m.AddComment(number, "LGTM"); err != nil {
+		writeError("%s", err)
+	}
+	fmt.Fprintf(os.Stdout, "Pull request %s approved\n", brush.Green(number))
+}
+
 // This is the top level command for
 // working with prs
 func mainCmd(c *cli.Context) {

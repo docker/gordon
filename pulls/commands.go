@@ -39,6 +39,11 @@ func loadCommands(app *cli.App) {
 			},
 		},
 		{
+			Name:   "alru",
+			Usage:  "Show the Age of the Least Recently Updated pull request for this repo. Lower is better.",
+			Action: alruCmd,
+		},
+		{
 			Name:   "merge",
 			Usage:  "Merge a pull request",
 			Action: mergeCmd,

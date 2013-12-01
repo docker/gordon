@@ -48,6 +48,25 @@ func (m *Maintainer) GetPullRequests(state string) ([]*gh.PullRequest, error) {
 	return allPRs, nil
 }
 
+func (m *Maintainer) GetFirstPullRequest(state, sortBy string) (*gh.PullRequest, error) {
+	o := &gh.Options{}
+	o.QueryParams = map[string]string{
+		"state":	state,
+		"per_page":	"1",
+		"page":		"1",
+		"sort":		sortBy,
+		"direction":	"asc",
+	}
+	prs, err := m.client.PullRequests(m.repo, o)
+	if err != nil {
+		return nil, err
+	}
+	if len(prs) == 0 {
+		return nil, fmt.Errorf("No matching pull request")
+	}
+	return prs[0], nil
+}
+
 // Return a single pull request
 // Return pr's comments if requested
 func (m *Maintainer) GetPullRequest(number string, comments bool) (*gh.PullRequest, []gh.Comment, error) {

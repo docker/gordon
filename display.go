@@ -81,8 +81,7 @@ func DisplayIssues(c *cli.Context, issues []gh.Issue, notrunc bool) {
 	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tASSIGNEE\tTITLE")
 	fmt.Fprintf(w, "\n")
 	for _, p := range issues {
-		fmt.Fprintf(w, "%d\t%s\t%s\t%s", p.Number, HumanDuration(time.Since(p.UpdatedAt)), p.Assignee.Login, p.Title)
-		fmt.Fprintf(w, "\n")
+		fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", p.Number, HumanDuration(time.Since(p.UpdatedAt)), p.Assignee.Login, p.Title)
 	}
 
 	if err := w.Flush(); err != nil {

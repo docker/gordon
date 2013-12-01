@@ -121,3 +121,23 @@ func (m *Maintainer) MergePullRequest(number, comment string) (gh.Merge, error) 
 	}
 	return m.client.MergePullRequest(m.repo, number, o)
 }
+
+// Checkout the pull request into the working tree of
+// the users repository.
+// This will mimic the operations on the manual merge view
+func (m *Maintainer) Checkout(pr *gh.PullRequest) error {
+	var (
+		userBranch        = fmt.Sprintf("%s-%s", pr.User.Login, pr.Head.Ref)
+		destinationBranch = pr.Base.Ref
+	)
+
+	// Checkout a new branch locally before pulling the changes
+	if err := Git("checkout", "-b", userBranch, destinationBranch); err != nil {
+		return err
+	}
+
+	if err := Git("pull", pr.Head.Repo.CloneURL, pr.Head.Ref); err != nil {
+		return err
+	}
+	return nil
+}

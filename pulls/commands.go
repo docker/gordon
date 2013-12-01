@@ -54,5 +54,10 @@ func loadCommands(app *cli.App) {
 				cli.StringFlag{"m", "", "commit message for merge"},
 			},
 		},
+		{
+			Name:   "checkout",
+			Usage:  "Checkout a pull request into your local repo",
+			Action: checkoutCmd,
+		},
 	}
 }

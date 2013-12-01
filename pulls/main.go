@@ -72,6 +72,17 @@ func mergeCmd(c *cli.Context) {
 	}
 }
 
+func checkoutCmd(c *cli.Context) {
+	number := c.Args()[0]
+	pr, _, err := m.GetPullRequest(number, false)
+	if err != nil {
+		writeError("%s", err)
+	}
+	if err := m.Checkout(pr); err != nil {
+		writeError("%s", err)
+	}
+}
+
 func main() {
 	app := cli.NewApp()
 

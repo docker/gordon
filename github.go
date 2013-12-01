@@ -28,8 +28,10 @@ func (m *Maintainer) Repository() (*gh.Repository, error) {
 func (m *Maintainer) GetPullRequests(state string) ([]*gh.PullRequest, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{
-		"state":    state,
-		"per_page": "100",
+		"sort":      "updated",
+		"direction": "asc",
+		"state":     state,
+		"per_page":  "100",
 	}
 	prevSize := -1
 	page := 1

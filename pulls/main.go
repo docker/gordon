@@ -34,11 +34,20 @@ func listClosedPullsCmd(c *cli.Context) {
 }
 
 func showPullRequestCmd(c *cli.Context) {
-	pr, err := m.GetPullRequest(c.Args()[0])
+	number := c.Args()[0]
+	if comment := c.String("comment"); comment != "" {
+		cmt, err := m.AddComment(number, comment)
+		if err != nil {
+			writeError("%s", err)
+		}
+		pulls.DisplayCommentAdded(cmt)
+		os.Exit(0)
+	}
+	pr, comments, err := m.GetPullRequest(number, true)
 	if err != nil {
 		writeError("%s", err)
 	}
-	pulls.DisplayPullRequest(pr)
+	pulls.DisplayPullRequest(pr, comments)
 }
 
 func repositoryInfoCmd(c *cli.Context) {
@@ -47,25 +56,6 @@ func repositoryInfoCmd(c *cli.Context) {
 		writeError("%s", err)
 	}
 	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
-}
-
-func manageCommentsCmd(c *cli.Context) {
-	number := c.Args()[0]
-	if c.Bool("add") {
-		comment := c.Args()[1]
-		cmt, err := m.AddComment(number, comment)
-		if err != nil {
-			writeError("%s\n", err)
-		}
-		pulls.DisplayCommentAdded(cmt)
-		return
-	} else {
-		comments, err := m.GetComments(number)
-		if err != nil {
-			writeError("%s\n", err)
-		}
-		pulls.DisplayComments(comments)
-	}
 }
 
 func mergeCmd(c *cli.Context) {

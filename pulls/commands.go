@@ -29,6 +29,9 @@ func loadCommands(app *cli.App) {
 			Name:   "show",
 			Usage:  "Show the pull request based on the number",
 			Action: showPullRequestCmd,
+			Flags: []cli.Flag{
+				cli.StringFlag{"comment", "", "add a comment to the pr"},
+			},
 		},
 		{
 			Name:   "repo",
@@ -41,14 +44,6 @@ func loadCommands(app *cli.App) {
 			Action: authCmd,
 			Flags: []cli.Flag{
 				cli.StringFlag{"add", "", "add new token for authentication"},
-			},
-		},
-		{
-			Name:   "comments",
-			Usage:  "Show and manage comments for a pull request",
-			Action: manageCommentsCmd,
-			Flags: []cli.Flag{
-				cli.BoolFlag{"add", "add a comment to the pull request"},
 			},
 		},
 		{

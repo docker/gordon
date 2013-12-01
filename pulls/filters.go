@@ -6,6 +6,7 @@ import (
 	gh "github.com/crosbymichael/octokat"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Filter func(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error)
@@ -24,6 +25,9 @@ func getFilter(c *cli.Context) Filter {
 	if c.Bool("no-merge") {
 		filter = combine(filter, noMergeFilter)
 	}
+	if c.Bool("new") {
+		filter = combine(filter, newFilter)
+	}
 	return filter
 }
 
@@ -36,6 +40,7 @@ func combine(filter, next Filter) Filter {
 func defaultFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error) {
 	return prs, err
 }
+
 func noMergeFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error) {
 	if err != nil {
 		return nil, err
@@ -91,4 +96,20 @@ func lgtmFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error) {
 		}
 	}
 	return prs, nil
+}
+
+func newFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	yesterday := time.Now().Add(-24 * time.Hour)
+	out := []*gh.PullRequest{}
+	for _, pr := range prs {
+		fmt.Printf(".")
+		if pr.CreatedAt.After(yesterday) {
+			out = append(out, pr)
+		}
+	}
+	return out, nil
 }

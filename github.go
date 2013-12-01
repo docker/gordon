@@ -119,3 +119,55 @@ func (m *Maintainer) Checkout(pr *gh.PullRequest) error {
 	}
 	return nil
 }
+
+func (m *Maintainer) GetFirstIssue(state, sortBy string) (gh.Issue, error) {
+	o := &gh.Options{}
+	o.QueryParams = map[string]string{
+		"state":	state,
+		"per_page":	"1",
+		"page":		"1",
+		"sort":		sortBy,
+		"direction":	"asc",
+	}
+	issues, err := m.client.Issues(m.repo, o)
+	if err != nil {
+		return gh.Issue{}, err
+	}
+	if len(issues) == 0 {
+		return gh.Issue{}, fmt.Errorf("No matching issues")
+	}
+	return issues[0], nil
+}
+
+// GetIssues queries the GithubAPI for all issues matching the state `state` and the
+// assignee `assignee`.
+// See http://developer.github.com/v3/issues/#list-issues-for-a-repository
+func (m *Maintainer) GetIssues(state, assignee string) ([]gh.Issue, error) {
+	o := &gh.Options{}
+	o.QueryParams = map[string]string{
+		"sort":      "updated",
+		"direction": "asc",
+		"state":     state,
+		"per_page":  "100",
+	}
+	// If assignee == "", don't add it to the params.
+	// This will show all issues, assigned or not.
+	if assignee != "" {
+		o.QueryParams["assignee"] = assignee
+	}
+	prevSize := -1
+	page := 1
+	all := []gh.Issue{}
+	for len(all) != prevSize {
+		o.QueryParams["page"] = strconv.Itoa(page)
+		if issues, err := m.client.Issues(m.repo, o); err != nil {
+			return nil, err
+		} else {
+			prevSize = len(all)
+			all = append(all, issues...)
+			page += 1
+		}
+		fmt.Printf(".")
+	}
+	return all, nil
+}

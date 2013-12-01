@@ -8,6 +8,7 @@ Quick installation instructions:
 
 * Install Go from http://golang.og/
 * Install pulls with `go get github.com/crosbymichael/pulls`
+* Install issues with `go get github.com/crosbymichael/issues`
 * Make sure your `$PATH` includes *x*/bin where *x* is each directory in your `$GOPATH` environment variable.
-* Call `pulls --help`
+* Call `pulls --help` and `issues --help`
 * Add your github token with `pulls auth --add <token>`

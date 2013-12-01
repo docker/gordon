@@ -44,5 +44,10 @@ func loadCommands(app *cli.App) {
 			Usage:  "Checkout a pull request into your local repo",
 			Action: checkoutCmd,
 		},
+		{
+			Name:   "approve",
+			Usage:  "Approve a pull request by adding LGTM to the comments",
+			Action: approveCmd,
+		},
 	}
 }

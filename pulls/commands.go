@@ -5,34 +5,19 @@ import (
 )
 
 func loadCommands(app *cli.App) {
+	// Add top level flags and commands
+	app.Action = mainCmd
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{"no-trunc", "don't truncate pr name"},
+		cli.BoolFlag{"no-merge", "display only prs that cannot be merged"},
+		cli.BoolFlag{"lgtm", "display the number of LGTM"},
+		cli.BoolFlag{"closed", "display closed prs"},
+		cli.StringFlag{"user", "", "display only prs from <user>"},
+		cli.StringFlag{"comment", "", "add a comment to the pr"},
+	}
+
+	// Add subcommands
 	app.Commands = []cli.Command{
-		{
-			Name:   "open",
-			Usage:  "List all open pull requests for the current repository",
-			Action: listOpenPullsCmd,
-			Flags: []cli.Flag{
-				cli.BoolFlag{"no-trunc", "don't truncate pr name"},
-				cli.BoolFlag{"no-merge", "display only prs that cannot be merged"},
-				cli.BoolFlag{"lgtm", "display the number of LGTM"},
-				cli.StringFlag{"user", "", "display only prs from <user>"},
-			},
-		},
-		{
-			Name:   "closed",
-			Usage:  "List all closed pull requests for the current repository",
-			Action: listClosedPullsCmd,
-			Flags: []cli.Flag{
-				cli.BoolFlag{"no-trunc", "don't truncate pr name"},
-			},
-		},
-		{
-			Name:   "show",
-			Usage:  "Show the pull request based on the number",
-			Action: showPullRequestCmd,
-			Flags: []cli.Flag{
-				cli.StringFlag{"comment", "", "add a comment to the pr"},
-			},
-		},
 		{
 			Name:   "repo",
 			Usage:  "List information about the current repository",

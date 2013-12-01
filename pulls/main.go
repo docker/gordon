@@ -13,9 +13,9 @@ var (
 	m *pulls.Maintainer
 )
 
-func listOpenPullsCmd(c *cli.Context) {
+func displayAllPullRequests(c *cli.Context, state string) {
 	// FIXME: Pass a filter to the Getpullrequests method
-	prs, err := m.GetPullRequests("open")
+	prs, err := m.GetPullRequests(state)
 	prs, err = m.FilterPullRequests(prs, c)
 	if err != nil {
 		writeError("Error getting pull requests %s", err)
@@ -24,30 +24,12 @@ func listOpenPullsCmd(c *cli.Context) {
 	pulls.DisplayPullRequests(c, prs, c.Bool("no-trunc"))
 }
 
-func listClosedPullsCmd(c *cli.Context) {
-	prs, err := m.GetPullRequests("closed")
-	if err != nil {
-		writeError("Error getting pull requests %s", err)
-	}
-	pulls.DisplayPullRequests(c, prs, c.Bool("no-trunc"))
-}
-
-func showPullRequestCmd(c *cli.Context) {
-	number := c.Args()[0]
-	if comment := c.String("comment"); comment != "" {
-		cmt, err := m.AddComment(number, comment)
-		if err != nil {
-			writeError("%s", err)
-		}
-		pulls.DisplayCommentAdded(cmt)
-		os.Exit(0)
-	}
-
-	pr, comments, err := m.GetPullRequest(number, true)
+func addComment(number, comment string) {
+	cmt, err := m.AddComment(number, comment)
 	if err != nil {
 		writeError("%s", err)
 	}
-	pulls.DisplayPullRequest(pr, comments)
+	pulls.DisplayCommentAdded(cmt)
 }
 
 func repositoryInfoCmd(c *cli.Context) {
@@ -80,6 +62,34 @@ func checkoutCmd(c *cli.Context) {
 	if err := m.Checkout(pr); err != nil {
 		writeError("%s", err)
 	}
+}
+
+// This is the top level command for
+// working with prs
+func mainCmd(c *cli.Context) {
+	if !c.Args().Present() {
+		state := "open"
+		if c.Bool("closed") {
+			state = "closed"
+		}
+		displayAllPullRequests(c, state)
+		return
+	}
+
+	var (
+		number  = c.Args().Get(0)
+		comment = c.String("comment")
+	)
+
+	if comment != "" {
+		addComment(number, comment)
+		return
+	}
+	pr, comments, err := m.GetPullRequest(number, true)
+	if err != nil {
+		writeError("%s", err)
+	}
+	pulls.DisplayPullRequest(pr, comments)
 }
 
 func main() {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	gh "github.com/crosbymichael/octokat"
 	"strconv"
+	"strings"
 )
 
 // Top level type that manages a repository
@@ -75,7 +76,23 @@ func (m *Maintainer) AddComment(number, comment string) (gh.Comment, error) {
 }
 
 // Merge a pull request
-func (m *Maintainer) MergePullRequest(number, comment string) (gh.Merge, error) {
+// If no LGTMs are in the comments require force to be true
+func (m *Maintainer) MergePullRequest(number, comment string, force bool) (gh.Merge, error) {
+	comments, err := m.GetComments(number)
+	if err != nil {
+		return gh.Merge{}, err
+	}
+	isApproved := false
+	for _, c := range comments {
+		// FIXME: Again should check for LGTM from a maintainer
+		if strings.Contains(c.Body, "LGTM") {
+			isApproved = true
+			break
+		}
+	}
+	if !isApproved && !force {
+		return gh.Merge{}, fmt.Errorf("Pull request %s has not been approved", number)
+	}
 	o := &gh.Options{}
 	o.Params = map[string]string{
 		"commit_message": comment,

@@ -44,6 +44,7 @@ func loadCommands(app *cli.App) {
 			Action: mergeCmd,
 			Flags: []cli.Flag{
 				cli.StringFlag{"m", "", "commit message for merge"},
+				cli.BoolFlag{"force", "merge a pull request that has not been approved"},
 			},
 		},
 		{

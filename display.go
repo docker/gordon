@@ -49,7 +49,7 @@ func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) 
 	}
 }
 
-func DisplayPullRequest(pr *gh.PullRequest) {
+func DisplayPullRequest(pr *gh.PullRequest, comments []gh.Comment) {
 	fmt.Fprint(os.Stdout, brush.Green("Pull Request:"), "\n")
 	fmt.Fprintf(os.Stdout, "No: %d\nTitle: %s\n\n", pr.Number, pr.Title)
 
@@ -58,6 +58,9 @@ func DisplayPullRequest(pr *gh.PullRequest) {
 		lines[i] = "\t" + l
 	}
 	fmt.Fprintf(os.Stdout, "Description:\n\n%s\n\n", strings.Join(lines, "\n"))
+	fmt.Fprintf(os.Stdout, "\n\n")
+
+	DisplayComments(comments)
 }
 
 func DisplayComments(comments []gh.Comment) {

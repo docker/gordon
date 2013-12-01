@@ -50,8 +50,20 @@ func (m *Maintainer) GetPullRequests(state string) ([]*gh.PullRequest, error) {
 }
 
 // Return a single pull request
-func (m *Maintainer) GetPullRequest(number string) (*gh.PullRequest, error) {
-	return m.client.PullRequest(m.repo, number, nil)
+// Return pr's comments if requested
+func (m *Maintainer) GetPullRequest(number string, comments bool) (*gh.PullRequest, []gh.Comment, error) {
+	var c []gh.Comment
+	pr, err := m.client.PullRequest(m.repo, number, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if comments {
+		c, err = m.GetComments(number)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	return pr, c, nil
 }
 
 // Return all comments for an issue or pull request
@@ -71,7 +83,7 @@ func (m *Maintainer) FilterPullRequests(prs []*gh.PullRequest, c *cli.Context) (
 		pr.ReviewComments = 0
 		if fromUser == "" || fromUser == pr.User.Login {
 			if noMerge {
-				pr, err := m.GetPullRequest(strconv.Itoa(pr.Number))
+				pr, _, err := m.GetPullRequest(strconv.Itoa(pr.Number), false)
 				if err != nil {
 					return nil, err
 				}

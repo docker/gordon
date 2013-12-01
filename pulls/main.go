@@ -42,7 +42,7 @@ func repositoryInfoCmd(c *cli.Context) {
 
 func mergeCmd(c *cli.Context) {
 	number := c.Args()[0]
-	merge, err := m.MergePullRequest(number, c.String("m"))
+	merge, err := m.MergePullRequest(number, c.String("m"), c.Bool("force"))
 	if err != nil {
 		writeError("%s", err)
 	}

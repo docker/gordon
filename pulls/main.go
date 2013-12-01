@@ -7,15 +7,14 @@ import (
 	gh "github.com/crosbymichael/octokat"
 	"github.com/crosbymichael/pulls"
 	"os"
-	"path"
 )
 
 var (
-	m          *pulls.Maintainer
-	configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
+	m *pulls.Maintainer
 )
 
 func listOpenPullsCmd(c *cli.Context) {
+	// FIXME: Pass a filter to the Getpullrequests method
 	prs, err := m.GetPullRequests("open")
 	prs, err = m.FilterPullRequests(prs, c)
 	if err != nil {
@@ -43,6 +42,7 @@ func showPullRequestCmd(c *cli.Context) {
 		pulls.DisplayCommentAdded(cmt)
 		os.Exit(0)
 	}
+
 	pr, comments, err := m.GetPullRequest(number, true)
 	if err != nil {
 		writeError("%s", err)
@@ -62,13 +62,12 @@ func mergeCmd(c *cli.Context) {
 	number := c.Args()[0]
 	merge, err := m.MergePullRequest(number, c.String("m"))
 	if err != nil {
-		writeError("%s\n", err)
+		writeError("%s", err)
 	}
 	if merge.Merged {
 		fmt.Fprintf(os.Stdout, "%s\n", brush.Green(merge.Message))
 	} else {
-		fmt.Fprintf(os.Stderr, "%s\n", brush.Red(merge.Message))
-		os.Exit(1)
+		writeError("%s", err)
 	}
 }
 
@@ -87,7 +86,7 @@ func main() {
 	app := cli.NewApp()
 
 	app.Name = "pulls"
-	app.Usage = "Manage github pull requets"
+	app.Usage = "Manage github pull requests for project maintainers"
 	app.Version = "0.0.1"
 
 	client := gh.NewClient()
@@ -99,11 +98,11 @@ func main() {
 
 	org, name, err := getOriginUrl()
 	if err != nil {
-		panic(err)
+		writeError("%s", err)
 	}
 	t, err := pulls.NewMaintainer(client, org, name)
 	if err != nil {
-		panic(err)
+		writeError("%s", err)
 	}
 	m = t
 

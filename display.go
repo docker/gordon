@@ -64,7 +64,7 @@ func DisplayPullRequest(pr *gh.PullRequest, comments []gh.Comment) {
 }
 
 func DisplayComments(comments []gh.Comment) {
-	fmt.Fprintln(os.Stdout, "Comments:\n")
+	fmt.Fprintln(os.Stdout, "Comments:")
 	for _, c := range comments {
 		fmt.Fprintf(os.Stdout, "@%s %s\n%s\n", brush.Red(c.User.Login), c.CreatedAt.Format(defaultTimeFormat), c.Body)
 		fmt.Fprint(os.Stdout, "\n\n")

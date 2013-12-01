@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/aybabtme/color/brush"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,11 +15,15 @@ type remote struct {
 	Url  string
 }
 
+// Write the specific error message with the givin
+// format and exit with a status code of 1
 func writeError(format string, err error) {
-	fmt.Fprintf(os.Stderr, format, err)
+	fmt.Fprintf(os.Stderr, format+"\n", brush.Red(err.Error()))
 	os.Exit(1)
 }
 
+// Pulls looks at the local repos origin to
+// know what github project to work with
 func getOriginUrl() (string, string, error) {
 	remotes, err := getRemotes()
 	if err != nil {
@@ -48,8 +53,12 @@ func getRemotes() ([]remote, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := []remote{}
-	s := bufio.NewScanner(bytes.NewBuffer(output))
+
+	var (
+		out = []remote{}
+		s   = bufio.NewScanner(bytes.NewBuffer(output))
+	)
+
 	for s.Scan() {
 		o := remote{}
 		if _, err := fmt.Sscan(s.Text(), &o.Name, &o.Url); err != nil {
@@ -57,6 +66,5 @@ func getRemotes() ([]remote, error) {
 		}
 		out = append(out, o)
 	}
-
 	return out, nil
 }

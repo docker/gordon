@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"github.com/codegangsta/cli"
 	"os"
+	"path"
 )
+
+var configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
 
 type Config struct {
 	Token string
@@ -49,6 +52,7 @@ func authCmd(c *cli.Context) {
 		}
 		return
 	}
+
 	// Display token and user information
 	if config := loadConfig(); config.Token != "" {
 		fmt.Fprintf(os.Stdout, "Token: %s\n", config.Token)

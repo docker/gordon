@@ -14,12 +14,12 @@ var (
 )
 
 func displayAllPullRequests(c *cli.Context, state string) {
-	// FIXME: Pass a filter to the Getpullrequests method
-	prs, err := m.GetPullRequests(state)
-	prs, err = m.FilterPullRequests(prs, c)
+	filter := getFilter(c)
+	prs, err := filter(m.GetPullRequests(state))
 	if err != nil {
 		writeError("Error getting pull requests %s", err)
 	}
+
 	fmt.Printf("%c[2K\r", 27)
 	pulls.DisplayPullRequests(c, prs, c.Bool("no-trunc"))
 }

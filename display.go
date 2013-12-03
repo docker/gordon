@@ -6,6 +6,7 @@ import (
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
 	"os"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -40,7 +41,11 @@ func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) 
 		}
 		fmt.Fprintf(w, "%d\t%s\t%s", p.Number, HumanDuration(time.Since(p.UpdatedAt)), p.Title)
 		if c.Bool("lgtm") {
-			fmt.Fprintf(w, "\t%d", p.ReviewComments)
+			lgtm := strconv.Itoa(p.ReviewComments)
+			if p.ReviewComments >= 2 {
+				lgtm = brush.Green(lgtm).String()
+			}
+			fmt.Fprintf(w, "\t%s", lgtm)
 		}
 		fmt.Fprintf(w, "\n")
 	}
@@ -90,7 +95,6 @@ func DisplayIssues(c *cli.Context, issues []gh.Issue, notrunc bool) {
 	}
 }
 
-
 // HumanDuration returns a human-readable approximation of a duration
 // This function is taken from the Docker project, and slightly modified
 // to cap units at days.
@@ -112,4 +116,3 @@ func HumanDuration(d time.Duration) string {
 	}
 	return fmt.Sprintf("%d days", int(d.Hours()/24))
 }
-

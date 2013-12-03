@@ -15,14 +15,6 @@ var (
 	configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
 )
 
-func listOpenIssuesCmd(c *cli.Context) {
-	issues, err := m.GetIssues("open", c.String("assigned"))
-	if err != nil {
-		writeError("Error getting issues: %s", err)
-	}
-	pulls.DisplayIssues(c, issues, c.Bool("no-trunc"))
-}
-
 func alruCmd(c *cli.Context) {
 	lru, err := m.GetFirstIssue("open", "updated")
 	if err != nil {
@@ -37,6 +29,16 @@ func repositoryInfoCmd(c *cli.Context) {
 		writeError("%s", err)
 	}
 	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
+}
+
+func mainCmd(c *cli.Context) {
+	issues, err := m.GetIssues("open", c.String("assigned"))
+	if err != nil {
+		writeError("Error getting issues: %s", err)
+	}
+
+	fmt.Printf("%c[2K\r", 27)
+	pulls.DisplayIssues(c, issues, c.Bool("no-trunc"))
 }
 
 func main() {

@@ -13,6 +13,7 @@ import (
 
 const (
 	defaultTimeFormat = time.RFC822
+	truncSize         = 80
 )
 
 func newTabwriter() *tabwriter.Writer {
@@ -20,8 +21,8 @@ func newTabwriter() *tabwriter.Writer {
 }
 
 func truncate(s string) string {
-	if len(s) > 30 {
-		s = s[:30] + "..."
+	if len(s) > truncSize {
+		s = s[:truncSize] + "..."
 	}
 	return s
 }

@@ -7,6 +7,7 @@ import (
 	gh "github.com/crosbymichael/octokat"
 	"github.com/crosbymichael/pulls"
 	"os"
+	"time"
 )
 
 var (
@@ -22,6 +23,14 @@ func displayAllPullRequests(c *cli.Context, state string) {
 
 	fmt.Printf("%c[2K\r", 27)
 	pulls.DisplayPullRequests(c, prs, c.Bool("no-trunc"))
+}
+
+func alruCmd(c *cli.Context) {
+	lru, err := m.GetFirstPullRequest("open", "updated")
+	if err != nil {
+		writeError("Error getting pull requests: %s", err)
+	}
+	fmt.Printf("%v (#%d)\n", pulls.HumanDuration(time.Since(lru.UpdatedAt)), lru.Number)
 }
 
 func addComment(number, comment string) {

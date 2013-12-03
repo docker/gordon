@@ -29,7 +29,7 @@ func truncate(s string) string {
 
 func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) {
 	w := newTabwriter()
-	fmt.Fprintf(w, "NUMBER\tTITLE\tCREATED AT")
+	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tTITLE")
 	if c.Bool("lgtm") {
 		fmt.Fprintf(w, "\tLGTM")
 	}
@@ -38,7 +38,7 @@ func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) 
 		if !notrunc {
 			p.Title = truncate(p.Title)
 		}
-		fmt.Fprintf(w, "%d\t%s\t%s", p.Number, p.Title, p.CreatedAt.Format(defaultTimeFormat))
+		fmt.Fprintf(w, "%d\t%s\t%s", p.Number, HumanDuration(time.Since(p.UpdatedAt)), p.Title)
 		if c.Bool("lgtm") {
 			fmt.Fprintf(w, "\t%d", p.ReviewComments)
 		}
@@ -82,8 +82,7 @@ func DisplayIssues(c *cli.Context, issues []gh.Issue, notrunc bool) {
 	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tASSIGNEE\tTITLE")
 	fmt.Fprintf(w, "\n")
 	for _, p := range issues {
-		fmt.Fprintf(w, "%d\t%s\t%s\t%s", p.Number, HumanDuration(time.Since(p.UpdatedAt)), p.Assignee.Login, p.Title)
-		fmt.Fprintf(w, "\n")
+		fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", p.Number, HumanDuration(time.Since(p.UpdatedAt)), p.Assignee.Login, p.Title)
 	}
 
 	if err := w.Flush(); err != nil {

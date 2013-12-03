@@ -66,7 +66,7 @@ func DisplayPullRequest(pr *gh.PullRequest, comments []gh.Comment) {
 func DisplayComments(comments []gh.Comment) {
 	fmt.Fprintln(os.Stdout, "Comments:")
 	for _, c := range comments {
-		fmt.Fprintf(os.Stdout, "@%s %s\n%s\n", brush.Red(c.User.Login), c.CreatedAt.Format(defaultTimeFormat), c.Body)
+		fmt.Fprintf(os.Stdout, "<%s\n@%s %s\n%s\n%s>", strings.Repeat("=", 79), brush.Red(c.User.Login), c.CreatedAt.Format(defaultTimeFormat), strings.Replace(c.Body, "LGTM", fmt.Sprintf("%s", brush.Green("LGTM")), -1), strings.Repeat("=", 79))
 		fmt.Fprint(os.Stdout, "\n\n")
 	}
 }
@@ -90,7 +90,6 @@ func DisplayIssues(c *cli.Context, issues []gh.Issue, notrunc bool) {
 	}
 }
 
-
 // HumanDuration returns a human-readable approximation of a duration
 // This function is taken from the Docker project, and slightly modified
 // to cap units at days.
@@ -112,4 +111,3 @@ func HumanDuration(d time.Duration) string {
 	}
 	return fmt.Sprintf("%d days", int(d.Hours()/24))
 }
-

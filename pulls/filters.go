@@ -14,6 +14,9 @@ type Filter func(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error)
 // Return the pr filter based on the context
 func getFilter(c *cli.Context) Filter {
 	filter := defaultFilter
+	if c.Bool("new") {
+		filter = combine(filter, newFilter)
+	}
 	if user := c.String("user"); user != "" {
 		filter = func(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error) {
 			return userFilter(prs, user, err)
@@ -24,9 +27,6 @@ func getFilter(c *cli.Context) Filter {
 	}
 	if c.Bool("no-merge") {
 		filter = combine(filter, noMergeFilter)
-	}
-	if c.Bool("new") {
-		filter = combine(filter, newFilter)
 	}
 	return filter
 }

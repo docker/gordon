@@ -57,7 +57,7 @@ func SaveConfig(config Config) error {
 func NewMaintainer(client *gh.Client, org, repo string) (*Maintainer, error) {
 
 	config, err := LoadConfig()
-	if err != nil {
+	if err == nil {
 		client.WithToken(config.Token)
 	}
 

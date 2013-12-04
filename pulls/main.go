@@ -118,7 +118,7 @@ func authCmd(c *cli.Context) {
 		return
 	}
 	// Display token and user information
-	if config, err := pulls.LoadConfig(); err != nil {
+	if config, err := pulls.LoadConfig(); err == nil {
 		fmt.Fprintf(os.Stdout, "Token: %s\n", config.Token)
 	} else {
 		fmt.Fprintf(os.Stderr, "No token registered\n")

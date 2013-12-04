@@ -22,22 +22,22 @@ type Config struct {
 
 var configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
 
-func LoadConfig() (Config, error) {
+func LoadConfig() (*Config, error) {
 	var config Config
 	f, err := os.Open(configPath)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return config, err
+			return &config, err
 		}
 	} else {
 		defer f.Close()
 
 		dec := json.NewDecoder(f)
 		if err := dec.Decode(&config); err != nil {
-			return config, err
+			return &config, err
 		}
 	}
-	return config, err
+	return &config, err
 }
 
 func SaveConfig(config Config) error {
@@ -55,6 +55,12 @@ func SaveConfig(config Config) error {
 }
 
 func NewMaintainer(client *gh.Client, org, repo string) (*Maintainer, error) {
+
+	config, err := LoadConfig()
+	if err != nil {
+		client.WithToken(config.Token)
+	}
+
 	return &Maintainer{
 		repo:   gh.Repo{Name: repo, UserName: org},
 		client: client,

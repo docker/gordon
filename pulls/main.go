@@ -127,6 +127,7 @@ func authCmd(c *cli.Context) {
 }
 
 func main() {
+
 	app := cli.NewApp()
 
 	app.Name = "pulls"
@@ -134,10 +135,6 @@ func main() {
 	app.Version = "0.0.1"
 
 	client := gh.NewClient()
-	config, err := pulls.LoadConfig()
-	if err != nil {
-		client.WithToken(config.Token)
-	}
 
 	org, name, err := getOriginUrl()
 	if err != nil {

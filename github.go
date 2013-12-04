@@ -1,8 +1,11 @@
 package pulls
 
 import (
+	"encoding/json"
 	"fmt"
 	gh "github.com/crosbymichael/octokat"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -11,6 +14,44 @@ import (
 type Maintainer struct {
 	repo   gh.Repo
 	client *gh.Client
+}
+
+type Config struct {
+	Token string
+}
+
+var configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
+
+func LoadConfig() (Config, error) {
+	var config Config
+	f, err := os.Open(configPath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return config, err
+		}
+	} else {
+		defer f.Close()
+
+		dec := json.NewDecoder(f)
+		if err := dec.Decode(&config); err != nil {
+			return config, err
+		}
+	}
+	return config, err
+}
+
+func SaveConfig(config Config) error {
+	f, err := os.OpenFile(configPath, os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+
+	enc := json.NewEncoder(f)
+	if err := enc.Encode(config); err != nil {
+		return err
+	}
+	return nil
 }
 
 func NewMaintainer(client *gh.Client, org, repo string) (*Maintainer, error) {
@@ -53,11 +94,11 @@ func (m *Maintainer) GetPullRequests(state string) ([]*gh.PullRequest, error) {
 func (m *Maintainer) GetFirstPullRequest(state, sortBy string) (*gh.PullRequest, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{
-		"state":	state,
-		"per_page":	"1",
-		"page":		"1",
-		"sort":		sortBy,
-		"direction":	"asc",
+		"state":     state,
+		"per_page":  "1",
+		"page":      "1",
+		"sort":      sortBy,
+		"direction": "asc",
 	}
 	prs, err := m.client.PullRequests(m.repo, o)
 	if err != nil {
@@ -144,11 +185,11 @@ func (m *Maintainer) Checkout(pr *gh.PullRequest) error {
 func (m *Maintainer) GetFirstIssue(state, sortBy string) (gh.Issue, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{
-		"state":	state,
-		"per_page":	"1",
-		"page":		"1",
-		"sort":		sortBy,
-		"direction":	"asc",
+		"state":     state,
+		"per_page":  "1",
+		"page":      "1",
+		"sort":      sortBy,
+		"direction": "asc",
 	}
 	issues, err := m.client.Issues(m.repo, o)
 	if err != nil {

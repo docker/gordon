@@ -110,6 +110,22 @@ func mainCmd(c *cli.Context) {
 	pulls.DisplayPullRequest(pr, comments)
 }
 
+func authCmd(c *cli.Context) {
+	if token := c.String("add"); token != "" {
+		if err := pulls.SaveConfig(pulls.Config{token}); err != nil {
+			writeError("%s", err)
+		}
+		return
+	}
+	// Display token and user information
+	if config, err := pulls.LoadConfig(); err != nil {
+		fmt.Fprintf(os.Stdout, "Token: %s\n", config.Token)
+	} else {
+		fmt.Fprintf(os.Stderr, "No token registered\n")
+		os.Exit(1)
+	}
+}
+
 func main() {
 	app := cli.NewApp()
 
@@ -118,9 +134,8 @@ func main() {
 	app.Version = "0.0.1"
 
 	client := gh.NewClient()
-
-	config := loadConfig()
-	if config.Token != "" {
+	config, err := pulls.LoadConfig()
+	if err != nil {
 		client.WithToken(config.Token)
 	}
 

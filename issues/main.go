@@ -18,7 +18,7 @@ var (
 func alruCmd(c *cli.Context) {
 	lru, err := m.GetFirstIssue("open", "updated")
 	if err != nil {
-		writeError("Error getting issues: %s", err)
+		pulls.WriteError("Error getting issues: %s", err)
 	}
 	fmt.Printf("%v (#%d)\n", pulls.HumanDuration(time.Since(lru.UpdatedAt)), lru.Number)
 }
@@ -26,7 +26,7 @@ func alruCmd(c *cli.Context) {
 func repositoryInfoCmd(c *cli.Context) {
 	r, err := m.Repository()
 	if err != nil {
-		writeError("%s", err)
+		pulls.WriteError("%s", err)
 	}
 	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
 }
@@ -34,7 +34,7 @@ func repositoryInfoCmd(c *cli.Context) {
 func mainCmd(c *cli.Context) {
 	issues, err := m.GetIssues("open", c.String("assigned"))
 	if err != nil {
-		writeError("Error getting issues: %s", err)
+		pulls.WriteError("Error getting issues: %s", err)
 	}
 
 	fmt.Printf("%c[2K\r", 27)
@@ -44,7 +44,7 @@ func mainCmd(c *cli.Context) {
 func authCmd(c *cli.Context) {
 	if token := c.String("add"); token != "" {
 		if err := pulls.SaveConfig(pulls.Config{token}); err != nil {
-			writeError("%s", err)
+			pulls.WriteError("%s", err)
 		}
 		return
 	}
@@ -66,7 +66,7 @@ func main() {
 
 	client := gh.NewClient()
 
-	org, name, err := getOriginUrl()
+	org, name, err := pulls.GetOriginUrl()
 	if err != nil {
 		panic(err)
 	}

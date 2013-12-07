@@ -18,7 +18,7 @@ func displayAllPullRequests(c *cli.Context, state string) {
 	filter := getFilter(c)
 	prs, err := filter(m.GetPullRequests(state))
 	if err != nil {
-		writeError("Error getting pull requests %s", err)
+		pulls.WriteError("Error getting pull requests %s", err)
 	}
 
 	fmt.Printf("%c[2K\r", 27)
@@ -28,7 +28,7 @@ func displayAllPullRequests(c *cli.Context, state string) {
 func alruCmd(c *cli.Context) {
 	lru, err := m.GetFirstPullRequest("open", "updated")
 	if err != nil {
-		writeError("Error getting pull requests: %s", err)
+		pulls.WriteError("Error getting pull requests: %s", err)
 	}
 	fmt.Printf("%v (#%d)\n", pulls.HumanDuration(time.Since(lru.UpdatedAt)), lru.Number)
 }
@@ -36,7 +36,7 @@ func alruCmd(c *cli.Context) {
 func addComment(number, comment string) {
 	cmt, err := m.AddComment(number, comment)
 	if err != nil {
-		writeError("%s", err)
+		pulls.WriteError("%s", err)
 	}
 	pulls.DisplayCommentAdded(cmt)
 }
@@ -44,7 +44,7 @@ func addComment(number, comment string) {
 func repositoryInfoCmd(c *cli.Context) {
 	r, err := m.Repository()
 	if err != nil {
-		writeError("%s", err)
+		pulls.WriteError("%s", err)
 	}
 	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
 }
@@ -53,12 +53,12 @@ func mergeCmd(c *cli.Context) {
 	number := c.Args()[0]
 	merge, err := m.MergePullRequest(number, c.String("m"), c.Bool("force"))
 	if err != nil {
-		writeError("%s", err)
+		pulls.WriteError("%s", err)
 	}
 	if merge.Merged {
 		fmt.Fprintf(os.Stdout, "%s\n", brush.Green(merge.Message))
 	} else {
-		writeError("%s", err)
+		pulls.WriteError("%s", err)
 	}
 }
 
@@ -66,10 +66,10 @@ func checkoutCmd(c *cli.Context) {
 	number := c.Args()[0]
 	pr, _, err := m.GetPullRequest(number, false)
 	if err != nil {
-		writeError("%s", err)
+		pulls.WriteError("%s", err)
 	}
 	if err := m.Checkout(pr); err != nil {
-		writeError("%s", err)
+		pulls.WriteError("%s", err)
 	}
 }
 
@@ -77,7 +77,7 @@ func checkoutCmd(c *cli.Context) {
 func approveCmd(c *cli.Context) {
 	number := c.Args().First()
 	if _, err := m.AddComment(number, "LGTM"); err != nil {
-		writeError("%s", err)
+		pulls.WriteError("%s", err)
 	}
 	fmt.Fprintf(os.Stdout, "Pull request %s approved\n", brush.Green(number))
 }
@@ -105,7 +105,7 @@ func mainCmd(c *cli.Context) {
 	}
 	pr, comments, err := m.GetPullRequest(number, true)
 	if err != nil {
-		writeError("%s", err)
+		pulls.WriteError("%s", err)
 	}
 	pulls.DisplayPullRequest(pr, comments)
 }
@@ -113,7 +113,7 @@ func mainCmd(c *cli.Context) {
 func authCmd(c *cli.Context) {
 	if token := c.String("add"); token != "" {
 		if err := pulls.SaveConfig(pulls.Config{token}); err != nil {
-			writeError("%s", err)
+			pulls.WriteError("%s", err)
 		}
 		return
 	}
@@ -136,13 +136,13 @@ func main() {
 
 	client := gh.NewClient()
 
-	org, name, err := getOriginUrl()
+	org, name, err := pulls.GetOriginUrl()
 	if err != nil {
-		writeError("%s", err)
+		pulls.WriteError("%s", err)
 	}
 	t, err := pulls.NewMaintainer(client, org, name)
 	if err != nil {
-		writeError("%s", err)
+		pulls.WriteError("%s", err)
 	}
 	m = t
 

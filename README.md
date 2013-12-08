@@ -6,7 +6,7 @@ It was created by Michael Crosby to improve the productivity of the [Docker](htt
 
 Quick installation instructions:
 
-* Install Go from http://golang.og/
+* Install Go from http://golang.org/
 * Install with `go get github.com/crosbymichael/pulls/{pulls,issues}`
 * Make sure your `$PATH` includes *x*/bin where *x* is each directory in your `$GOPATH` environment variable.
 * Call `pulls --help` and `issues --help`

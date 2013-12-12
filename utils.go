@@ -42,6 +42,14 @@ func GetOriginUrl() (string, string, error) {
 	return "", "", nil
 }
 
+func GetMaintainerEmail() (string, error) {
+	output, err := exec.Command("git", "config", "user.email").Output()
+	if err != nil {
+		return "", err
+	}
+	return string(bytes.Split(output, []byte("\n"))[0]), err
+}
+
 // Return the remotes for the current dir
 func getRemotes() ([]remote, error) {
 	output, err := exec.Command("git", "remote", "-v").Output()

@@ -16,15 +16,26 @@ var (
 	m *pulls.Maintainer
 )
 
-func displayAllPullRequests(c *cli.Context, state string) {
+func displayAllPullRequests(c *cli.Context, state string, showAll bool) {
 	filter := getFilter(c)
-	prs, err := filter(m.GetPullRequests(state))
+	prs, err := filter(m.GetPullRequestsThatICareAbout(showAll, state))
 	if err != nil {
 		pulls.WriteError("Error getting pull requests %s", err)
 	}
 
 	fmt.Printf("%c[2K\r", 27)
 	pulls.DisplayPullRequests(c, prs, c.Bool("no-trunc"))
+}
+
+func displayAllPullRequestFiles(c *cli.Context, number string) {
+	prfs, err := m.GetPullRequestFiles(number)
+	if err == nil {
+		i := 1
+		for _, p := range prfs {
+			fmt.Printf("%d: filename %s additions %d deletions %d\n", i, p.FileName, p.Additions, p.Deletions)
+			i++
+		}
+	}
 }
 
 func alruCmd(c *cli.Context) {
@@ -134,10 +145,14 @@ func reviewersCmd(c *cli.Context) {
 func mainCmd(c *cli.Context) {
 	if !c.Args().Present() {
 		state := "open"
+		showAll := false
 		if c.Bool("closed") {
 			state = "closed"
 		}
-		displayAllPullRequests(c, state)
+		if c.Bool("all") {
+			showAll = true
+		}
+		displayAllPullRequests(c, state, showAll)
 		return
 	}
 

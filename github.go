@@ -97,7 +97,12 @@ func getRepoPath(pth, org string) string {
 
 func getMaintainersEmails(pth string) (*[]string, error) {
 	maintainersFileMap := []string{}
-	file, _ := os.Open(pth)
+	file, err := os.Open(pth)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return &maintainersFileMap, err
+		}
+	}
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		strEmail, isEmail, err := getEmailFromLine(scanner.Text())

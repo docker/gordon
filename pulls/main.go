@@ -6,6 +6,7 @@ import (
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
 	"github.com/crosbymichael/pulls"
+	"github.com/crosbymichael/pulls/filters"
 	"io"
 	"net/http"
 	"os"
@@ -17,7 +18,7 @@ var (
 )
 
 func displayAllPullRequests(c *cli.Context, state string, showAll bool) {
-	filter := getFilter(c)
+	filter := filters.GetPullRequestFilter(c)
 	prs, err := filter(m.GetPullRequestsThatICareAbout(showAll, state))
 	if err != nil {
 		pulls.WriteError("Error getting pull requests %s", err)
@@ -132,13 +133,12 @@ func reviewersCmd(c *cli.Context) {
 	if err != nil {
 		pulls.WriteError("%s", err)
 	}
-	for _, fileReviewers := range(reviewers) {
-		for _, reviewer := range(fileReviewers) {
+	for _, fileReviewers := range reviewers {
+		for _, reviewer := range fileReviewers {
 			fmt.Printf("%s\n", reviewer.Username)
 		}
 	}
 }
-
 
 // This is the top level command for
 // working with prs

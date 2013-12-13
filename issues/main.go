@@ -5,6 +5,7 @@ import (
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
 	"github.com/crosbymichael/pulls"
+	"github.com/crosbymichael/pulls/filters"
 	"os"
 	"path"
 	"time"
@@ -32,7 +33,8 @@ func repositoryInfoCmd(c *cli.Context) {
 }
 
 func mainCmd(c *cli.Context) {
-	issues, err := m.GetIssues("open", c.String("assigned"))
+	filter := filters.GetIssueFilter(c)
+	issues, err := filter(m.GetIssues("open", c.String("assigned")))
 	if err != nil {
 		pulls.WriteError("Error getting issues: %s", err)
 	}

@@ -111,12 +111,7 @@ func getRepoPath(pth, org string) string {
 
 func getMaintainersIds(pth string) (*[]string, error) {
 	maintainersFileMap := []string{}
-	file, err := os.Open(pth)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return &maintainersFileMap, err
-		}
-	}
+	file, _ := os.Open(pth)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		strEmail, isEmail, err := getEmailFromLine(scanner.Text())
@@ -223,12 +218,10 @@ func NewMaintainer(client *gh.Client, org, repo string) (*Maintainer, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	err = createMaintainerDirectoriesMap(originPath, "", email, config.UserName, false)
 	if err != nil {
 		return nil, err
 	}
-
 	return &Maintainer{
 		repo:           gh.Repo{Name: repo, UserName: org},
 		client:         client,

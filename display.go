@@ -85,9 +85,20 @@ func DisplayCommentAdded(cmt gh.Comment) {
 func DisplayIssues(c *cli.Context, issues []*gh.Issue, notrunc bool) {
 	w := newTabwriter()
 	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tASSIGNEE\tTITLE")
+	if c.Int("votes") > 0 {
+		fmt.Fprintf(w, "\tVOTES")
+	}
 	fmt.Fprintf(w, "\n")
 	for _, p := range issues {
-		fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", p.Number, HumanDuration(time.Since(p.UpdatedAt)), p.Assignee.Login, p.Title)
+		fmt.Fprintf(w, "%d\t%s\t%s\t%s", p.Number, HumanDuration(time.Since(p.UpdatedAt)), p.Assignee.Login, p.Title)
+		if c.Int("votes") > 0 {
+			votes := strconv.Itoa(p.Comments)
+			if p.Comments >= 2 {
+				votes = brush.Green(votes).String()
+			}
+			fmt.Fprintf(w, "\t%s", votes)
+		}
+		fmt.Fprintf(w, "\n")
 	}
 
 	if err := w.Flush(); err != nil {

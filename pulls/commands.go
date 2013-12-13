@@ -37,6 +37,7 @@ func loadCommands(app *cli.App) {
 			Action: authCmd,
 			Flags: []cli.Flag{
 				cli.StringFlag{"add", "", "add new token for authentication"},
+				cli.StringFlag{"user", "", "add github user name"},
 			},
 		},
 		{

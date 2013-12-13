@@ -28,7 +28,8 @@ type MaintainerDirectoriesMap struct {
 }
 
 type Config struct {
-	Token string
+	Token    string
+	UserName string
 }
 
 const MaintainersFileName = "MAINTAINERS"
@@ -77,6 +78,19 @@ func getEmailFromLine(str string) (string, bool, error) {
 	return exp.FindString(str), exp.MatchString(str), err
 }
 
+func getUserNameFromLine(str string) (string, bool, error) {
+	exp, err := regexp.Compile(`@([a-zA-Z0-9_\-\.]+)`)
+	if err != nil {
+		return "", false, err
+	}
+	result := exp.FindAllStringSubmatch(str, -1)
+	if len(result) == 0 {
+		return "", false, nil
+	}
+	userName := result[len(result)-1][1]
+	return userName, exp.MatchString(str), err
+}
+
 func getRepoPath(pth, org string) string {
 	flag := false
 	i := 0
@@ -95,7 +109,7 @@ func getRepoPath(pth, org string) string {
 	return repoPath
 }
 
-func getMaintainersEmails(pth string) (*[]string, error) {
+func getMaintainersIds(pth string) (*[]string, error) {
 	maintainersFileMap := []string{}
 	file, err := os.Open(pth)
 	if err != nil {
@@ -113,13 +127,21 @@ func getMaintainersEmails(pth string) (*[]string, error) {
 			email := []string{strEmail}
 			maintainersFileMap = append(maintainersFileMap, email...)
 		}
+		strUserName, isUserName, err := getUserNameFromLine(scanner.Text())
+		if err != nil {
+			return nil, err
+		}
+		if isUserName {
+			userName := []string{strUserName}
+			maintainersFileMap = append(maintainersFileMap, userName...)
+		}
 	}
 	sort.Strings(maintainersFileMap)
 
 	return &maintainersFileMap, nil
 }
 
-func createMaintainerDirectoriesMap(pth, cpth, maintainerEmail string, belongsToOthers bool) error {
+func createMaintainerDirectoriesMap(pth, cpth, maintainerEmail, userName string, belongsToOthers bool) error {
 	names, err := ioutil.ReadDir(pth)
 	if err != nil {
 		return err
@@ -131,13 +153,18 @@ func createMaintainerDirectoriesMap(pth, cpth, maintainerEmail string, belongsTo
 	for _, name := range names {
 		if strings.EqualFold(name.Name(), MaintainersFileName) {
 			foundMaintainersFile = true
-			emails, err := getMaintainersEmails(path.Join(pth, name.Name()))
+			ids, err := getMaintainersIds(path.Join(pth, name.Name()))
 			if err != nil {
 				return err
 			}
-			i := sort.SearchStrings(*emails, maintainerEmail)
-			if i < len(*emails) && (*emails)[i] == maintainerEmail {
+			i := sort.SearchStrings(*ids, maintainerEmail)
+			if i < len(*ids) && (*ids)[i] == maintainerEmail {
 				iAmOneOfTheMaintainers = true
+			} else {
+				i := sort.SearchStrings(*ids, userName)
+				if i < len(*ids) && (*ids)[i] == userName {
+					iAmOneOfTheMaintainers = true
+				}
 			}
 		}
 	}
@@ -156,7 +183,7 @@ func createMaintainerDirectoriesMap(pth, cpth, maintainerEmail string, belongsTo
 		if name.IsDir() && name.Name()[0] != '.' {
 			tmpcpth := path.Join(cpth, name.Name())
 			newPath := path.Join(pth, name.Name())
-			createMaintainerDirectoriesMap(newPath, tmpcpth, maintainerEmail, belongsToOtherMaintainers)
+			createMaintainerDirectoriesMap(newPath, tmpcpth, maintainerEmail, userName, belongsToOtherMaintainers)
 		}
 	}
 
@@ -197,7 +224,7 @@ func NewMaintainer(client *gh.Client, org, repo string) (*Maintainer, error) {
 		return nil, err
 	}
 
-	err = createMaintainerDirectoriesMap(originPath, "", email, false)
+	err = createMaintainerDirectoriesMap(originPath, "", email, config.UserName, false)
 	if err != nil {
 		return nil, err
 	}

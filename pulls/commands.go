@@ -62,5 +62,10 @@ func loadCommands(app *cli.App) {
 			Usage:  "Approve a pull request by adding LGTM to the comments",
 			Action: approveCmd,
 		},
+		{
+			Name:   "show",
+			Usage:  "Print the patch submitted by a pull request",
+			Action: showCmd,
+		},
 	}
 }

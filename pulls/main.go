@@ -6,6 +6,8 @@ import (
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
 	"github.com/crosbymichael/pulls"
+	"io"
+	"net/http"
 	"os"
 	"time"
 )
@@ -81,6 +83,23 @@ func approveCmd(c *cli.Context) {
 	}
 	fmt.Fprintf(os.Stdout, "Pull request %s approved\n", brush.Green(number))
 }
+
+// Show the patch in a PR
+func showCmd(c *cli.Context) {
+	number := c.Args()[0]
+	pr, _, err := m.GetPullRequest(number, false)
+	if err != nil {
+		pulls.WriteError("%s", err)
+	}
+	patch, err := http.Get(pr.DiffURL)
+	if err != nil {
+		pulls.WriteError("%s", err)
+	}
+	if _, err := io.Copy(os.Stdout, patch.Body); err != nil {
+		pulls.WriteError("%s", err)
+	}
+}
+
 
 // This is the top level command for
 // working with prs

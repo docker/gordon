@@ -67,5 +67,10 @@ func loadCommands(app *cli.App) {
 			Usage:  "Print the patch submitted by a pull request",
 			Action: showCmd,
 		},
+		{
+			Name:   "reviewers",
+			Usage:  "Use the hierarchy of MAINTAINERS files to list who should review a pull request",
+			Action: reviewersCmd,
+		},
 	}
 }

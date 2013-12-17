@@ -100,6 +100,34 @@ func showCmd(c *cli.Context) {
 	}
 }
 
+// Show the reviewers for this pull request
+func reviewersCmd(c *cli.Context) {
+	number := c.Args()[0]
+	var patch io.Reader
+	if number == "-" {
+		patch = os.Stdin
+	} else {
+		pr, _, err := m.GetPullRequest(number, false)
+		if err != nil {
+			pulls.WriteError("%s", err)
+		}
+		resp, err := http.Get(pr.DiffURL)
+		if err != nil {
+			pulls.WriteError("%s", err)
+		}
+		patch = resp.Body
+	}
+	reviewers, err := ReviewPatch(patch)
+	if err != nil {
+		pulls.WriteError("%s", err)
+	}
+	for _, fileReviewers := range(reviewers) {
+		for _, reviewer := range(fileReviewers) {
+			fmt.Printf("%s\n", reviewer.Username)
+		}
+	}
+}
+
 
 // This is the top level command for
 // working with prs

@@ -82,7 +82,7 @@ func noMergePullRequestsFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequ
 		if err != nil {
 			panic(err)
 		}
-		t, err := pulls.NewMaintainer(client, org, name)
+		t, err := pulls.NewMaintainerManager(client, org, name)
 		if err != nil {
 			panic(err)
 		}
@@ -124,7 +124,7 @@ func lgtmPullRequestsFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequest
 		if err != nil {
 			panic(err)
 		}
-		t, err := pulls.NewMaintainer(client, org, name)
+		t, err := pulls.NewMaintainerManager(client, org, name)
 		if err != nil {
 			panic(err)
 		}
@@ -173,7 +173,7 @@ func voteIssuesFilter(issues []*gh.Issue, numVotes int, err error) ([]*gh.Issue,
 		if err != nil {
 			panic(err)
 		}
-		t, err := pulls.NewMaintainer(client, org, name)
+		t, err := pulls.NewMaintainerManager(client, org, name)
 		if err != nil {
 			panic(err)
 		}

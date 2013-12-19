@@ -42,7 +42,7 @@ func GetOriginUrl() (string, string, error) {
 	return "", "", nil
 }
 
-func GetMaintainerEmail() (string, error) {
+func GetMaintainerManagerEmail() (string, error) {
 	output, err := exec.Command("git", "config", "user.email").Output()
 	if err != nil {
 		return "", err

@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	m *pulls.Maintainer
+	m *pulls.MaintainerManager
 )
 
 func displayAllPullRequests(c *cli.Context, state string, showAll bool) {
@@ -129,7 +129,7 @@ func reviewersCmd(c *cli.Context) {
 		}
 		patch = resp.Body
 	}
-	reviewers, err := ReviewPatch(patch)
+	reviewers, err := pulls.ReviewPatch(patch)
 	if err != nil {
 		pulls.WriteError("%s", err)
 	}
@@ -219,7 +219,7 @@ func main() {
 	if err != nil {
 		pulls.WriteError("%s", err)
 	}
-	t, err := pulls.NewMaintainer(client, org, name)
+	t, err := pulls.NewMaintainerManager(client, org, name)
 	if err != nil {
 		pulls.WriteError("%s", err)
 	}

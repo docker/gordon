@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	m          *pulls.Maintainer
+	m          *pulls.MaintainerManager
 	configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
 )
 
@@ -89,7 +89,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	t, err := pulls.NewMaintainer(client, org, name)
+	t, err := pulls.NewMaintainerManager(client, org, name)
 	if err != nil {
 		panic(err)
 	}

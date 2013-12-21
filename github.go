@@ -159,7 +159,7 @@ func createMaintainerManagerDirectoriesMap(pth, cpth, maintainerEmail, userName 
 	return err
 }
 
-func getOriginPath(org string) (string, error) {
+func getOriginPath(repo string) (string, error) {
 	currentPath, err := os.Getwd()
 	if err != nil {
 		return "", err
@@ -168,7 +168,7 @@ func getOriginPath(org string) (string, error) {
 	originPath := path.Dir("/")
 	for _, dir := range strings.Split(currentPath, "/") {
 		originPath = path.Join(originPath, dir)
-		if strings.EqualFold(dir, org) {
+		if strings.EqualFold(dir, repo) {
 			break
 		}
 	}
@@ -181,13 +181,10 @@ func NewMaintainerManager(client *gh.Client, org, repo string) (*MaintainerManag
 	if err == nil {
 		client.WithToken(config.Token)
 	}
-
 	originPath, err := getOriginPath(org)
 	if err != nil {
 		return nil, err
 	}
-	originPath = path.Join(originPath, repo)
-
 	email, err := GetMaintainerManagerEmail()
 	if err != nil {
 		return nil, err
@@ -317,6 +314,27 @@ func (m *MaintainerManager) GetPullRequest(number string, comments bool) (*gh.Pu
 	return pr, c, nil
 }
 
+// Return a single issue
+// Return issue's comments if requested
+func (m *MaintainerManager) GetIssue(number string, comments bool) (*gh.Issue, []gh.Comment, error) {
+	var c []gh.Comment
+	num, err := strconv.Atoi(number)
+	if err != nil {
+		return nil, nil, err
+	}
+	issue, err := m.client.Issue(m.repo, num, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if comments {
+		c, err = m.GetComments(number)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	return issue, c, nil
+}
+
 // Return all comments for an issue or pull request
 func (m *MaintainerManager) GetComments(number string) ([]gh.Comment, error) {
 	return m.client.Comments(m.repo, number, nil)
@@ -370,6 +388,30 @@ func (m *MaintainerManager) Checkout(pr *gh.PullRequest) error {
 		return err
 	}
 	return nil
+}
+
+// Get the user information from the authenticated user
+func (m *MaintainerManager) GetGithubUser() (*gh.User, error) {
+	user, err := m.client.User("", nil)
+	if err != nil {
+		return nil, nil
+	}
+	return user, err
+}
+
+// Patch an issue
+func (m *MaintainerManager) PatchIssue(number string, issue *gh.Issue) (*gh.Issue, error) {
+	o := &gh.Options{}
+	o.Params = map[string]string{
+		"title":    issue.Title,
+		"body":     issue.Body,
+		"assignee": issue.Assignee.Login,
+	}
+	patchedIssue, err := m.client.PatchIssue(m.repo, number, o)
+	if err != nil {
+		return nil, nil
+	}
+	return patchedIssue, err
 }
 
 func (m *MaintainerManager) GetFirstIssue(state, sortBy string) (*gh.Issue, error) {

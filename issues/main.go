@@ -32,15 +32,75 @@ func repositoryInfoCmd(c *cli.Context) {
 	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
 }
 
-func mainCmd(c *cli.Context) {
-	filter := filters.GetIssueFilter(c)
-	issues, err := filter(m.GetIssues("open", c.String("assigned")))
-	if err != nil {
-		pulls.WriteError("Error getting issues: %s", err)
+//Take a specific issue. If it's taken, show a message with the overwrite optional flag
+//If the user doesn't have permissions, add a comment #volunteer
+func takeCmd(c *cli.Context) {
+	if c.Args().Present() {
+		number := c.Args()[0]
+		issue, _, err := m.GetIssue(number, false)
+		if err != nil {
+			pulls.WriteError("%s", err)
+		}
+		user, err := m.GetGithubUser()
+		if err != nil {
+			pulls.WriteError("%s", err)
+		}
+		if issue.Assignee.Login != "" && !c.Bool("overwrite") {
+			fmt.Fprintf(os.Stdout, "Use the flag --overwrite to take the issue from %s", issue.Assignee.Login)
+			return
+		}
+		issue.Assignee = *user
+		patchedIssue, err := m.PatchIssue(number, issue)
+		if err != nil {
+			pulls.WriteError("%s", err)
+		}
+		if patchedIssue.Assignee.Login != user.Login {
+			m.AddComment(number, "#volunteer")
+			fmt.Fprintf(os.Stdout, "No permission to assign. You '%s' was added as #volunteer.", user.Login)
+		} else {
+			fmt.Fprintf(os.Stdout, "The issue %s was assigned to %s", number, patchedIssue.Assignee.Login)
+		}
+	} else {
+		fmt.Fprintf(os.Stdout, "Please enter the issue's number")
 	}
 
-	fmt.Printf("%c[2K\r", 27)
-	pulls.DisplayIssues(c, issues, c.Bool("no-trunc"))
+}
+
+func addComment(number, comment string) {
+	cmt, err := m.AddComment(number, comment)
+	if err != nil {
+		pulls.WriteError("%s", err)
+	}
+	pulls.DisplayCommentAdded(cmt)
+}
+
+func mainCmd(c *cli.Context) {
+	if !c.Args().Present() {
+		filter := filters.GetIssueFilter(c)
+		issues, err := filter(m.GetIssues("open", c.String("assigned")))
+		if err != nil {
+			pulls.WriteError("Error getting issues: %s", err)
+		}
+
+		fmt.Printf("%c[2K\r", 27)
+		pulls.DisplayIssues(c, issues, c.Bool("no-trunc"))
+		return
+	}
+
+	var (
+		number  = c.Args().Get(0)
+		comment = c.String("comment")
+	)
+
+	if comment != "" {
+		addComment(number, comment)
+		return
+	}
+	issue, comments, err := m.GetIssue(number, true)
+	if err != nil {
+		pulls.WriteError("%s", err)
+	}
+	pulls.DisplayIssue(issue, comments)
 }
 
 func authCmd(c *cli.Context) {

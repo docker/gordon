@@ -25,6 +25,15 @@ func loadCommands(app *cli.App) {
 			Action: repositoryInfoCmd,
 		},
 		{
+			Name:   "take",
+			Usage:  "Assign an issue to your github account",
+			Action: takeCmd,
+			Flags: []cli.Flag{
+				cli.BoolFlag{"overwrite", "overwrites a taken issue"},
+			},
+		},
+
+		{
 			Name:   "auth",
 			Usage:  "Add a github token for authentication",
 			Action: authCmd,

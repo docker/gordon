@@ -81,7 +81,7 @@ func DisplayCommentAdded(cmt gh.Comment) {
 	fmt.Fprintf(os.Stdout, "Comment added at %s\n", cmt.CreatedAt.Format(defaultTimeFormat))
 }
 
-// DisplayIssues prints `issues` to standard output in a human-friendly tabulated format.
+// Display Issues prints `issues` to standard output in a human-friendly tabulated format.
 func DisplayIssues(c *cli.Context, issues []*gh.Issue, notrunc bool) {
 	w := newTabwriter()
 	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tASSIGNEE\tTITLE")
@@ -104,6 +104,20 @@ func DisplayIssues(c *cli.Context, issues []*gh.Issue, notrunc bool) {
 	if err := w.Flush(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s", err)
 	}
+}
+
+func DisplayIssue(issue *gh.Issue, comments []gh.Comment) {
+	fmt.Fprint(os.Stdout, brush.Green("Issue:"), "\n")
+	fmt.Fprintf(os.Stdout, "No: %d\nTitle: %s\n\n", issue.Number, issue.Title)
+
+	lines := strings.Split(issue.Body, "\n")
+	for i, l := range lines {
+		lines[i] = "\t" + l
+	}
+	fmt.Fprintf(os.Stdout, "Description:\n\n%s\n\n", strings.Join(lines, "\n"))
+	fmt.Fprintf(os.Stdout, "\n\n")
+
+	DisplayComments(comments)
 }
 
 // HumanDuration returns a human-readable approximation of a duration

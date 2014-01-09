@@ -96,6 +96,13 @@ func mainCmd(c *cli.Context) {
 		addComment(number, comment)
 		return
 	}
+
+	if c.Bool("vote") {
+		addComment(number, "+1")
+		fmt.Fprintf(os.Stdout, "Vote added to the issue: %s", number)
+		return
+	}
+
 	issue, comments, err := m.GetIssue(number, true)
 	if err != nil {
 		pulls.WriteError("%s", err)

@@ -20,6 +20,7 @@ type MaintainerManager struct {
 	client         *gh.Client
 	email          string
 	directoriesMap *MaintainerManagerDirectoriesMap
+	maintainersIds *[]string
 }
 
 type MaintainerManagerDirectoriesMap struct {
@@ -33,9 +34,11 @@ type Config struct {
 
 const MaintainerManagersFileName = "MAINTAINERS"
 
-var configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
-
-var maintainerDirectoriesMap = MaintainerManagerDirectoriesMap{}
+var (
+	maintainerDirectoriesMap = MaintainerManagerDirectoriesMap{}
+	maintainersIds           = []string{}
+	configPath               = path.Join(os.Getenv("HOME"), ".maintainercfg")
+)
 
 func LoadConfig() (*Config, error) {
 	var config Config
@@ -91,6 +94,7 @@ func getMaintainerManagersIds(pth string) (*[]string, error) {
 	maintainersFileMap := []string{}
 	file, _ := os.Open(pth)
 	scanner := bufio.NewScanner(file)
+
 	for scanner.Scan() {
 		m := parseMaintainer(scanner.Text())
 		if m.Username == "" && m.Email == "" {
@@ -119,10 +123,13 @@ func createMaintainerManagerDirectoriesMap(pth, cpth, maintainerEmail, userName 
 	foundMaintainerManagersFile := false
 	iAmOneOfTheMaintainerManagers := false
 	belongsToOtherMaintainerManagers := false
+
 	for _, name := range names {
 		if strings.EqualFold(name.Name(), MaintainerManagersFileName) {
 			foundMaintainerManagersFile = true
 			ids, err := getMaintainerManagersIds(path.Join(pth, name.Name()))
+			maintainersIds = append(maintainersIds, (*ids)...)
+			sort.Strings(maintainersIds)
 			if err != nil {
 				return err
 			}
@@ -181,7 +188,7 @@ func NewMaintainerManager(client *gh.Client, org, repo string) (*MaintainerManag
 	if err == nil {
 		client.WithToken(config.Token)
 	}
-	originPath, err := getOriginPath(org)
+	originPath, err := getOriginPath(repo)
 	if err != nil {
 		return nil, err
 	}
@@ -198,11 +205,17 @@ func NewMaintainerManager(client *gh.Client, org, repo string) (*MaintainerManag
 		client:         client,
 		directoriesMap: &maintainerDirectoriesMap,
 		email:          email,
+		maintainersIds: &maintainersIds,
 	}, nil
 }
 
 func (m *MaintainerManager) Repository() (*gh.Repository, error) {
 	return m.client.Repository(m.repo, nil)
+}
+
+func (m *MaintainerManager) IsMaintainer(userName string) bool {
+	i := sort.SearchStrings(*(m.maintainersIds), userName)
+	return (i < len(*(m.maintainersIds)) && (*(m.maintainersIds))[i] == userName)
 }
 
 // Return all the pull requests that I care about

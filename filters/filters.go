@@ -133,10 +133,13 @@ func lgtmPullRequestsFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequest
 			return nil, err
 		}
 		pr.ReviewComments = 0
+		maintainersOccurrence := map[string]bool{}
 		for _, comment := range comments {
 			// We should check it this LGTM is by a user in
 			// the maintainers file
-			if strings.Contains(comment.Body, "LGTM") {
+			userName := comment.User.Login
+			if strings.Contains(comment.Body, "LGTM") && t.IsMaintainer(userName) && !maintainersOccurrence[userName] {
+				maintainersOccurrence[userName] = true
 				pr.ReviewComments += 1
 			}
 		}

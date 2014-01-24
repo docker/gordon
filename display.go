@@ -82,7 +82,7 @@ func DisplayCommentAdded(cmt gh.Comment) {
 }
 
 // DisplayIssues prints `issues` to standard output in a human-friendly tabulated format.
-func DisplayIssues(c *cli.Context, issues []gh.Issue, notrunc bool) {
+func DisplayIssues(c *cli.Context, issues []*gh.Issue, notrunc bool) {
 	w := newTabwriter()
 	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tASSIGNEE\tTITLE")
 	fmt.Fprintf(w, "\n")

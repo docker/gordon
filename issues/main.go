@@ -66,6 +66,53 @@ func takeCmd(c *cli.Context) {
 
 }
 
+func buildQuery(c *cli.Context) string {
+	r, err := m.Repository()
+	if err != nil {
+		pulls.WriteError("%s", err)
+	}
+	// standard parameters
+	query := fmt.Sprintf("q=%s+repo:%s", c.Args()[0], r.FullName)
+	state := c.String("state")
+	if state == "" {
+		state = "open"
+	}
+	query += fmt.Sprintf("+state:%s", state)
+	// optional parameters
+	var optionalParameters = []string{
+		"author",
+		"assignee",
+		"mentions",
+		"commenter",
+		"involves",
+		"labels"}
+
+	for i := 0; i < len(optionalParameters); i++ {
+		param := optionalParameters[i]
+		value := c.String(param)
+		if value != "" {
+			query += fmt.Sprintf("+%s:%s", param, value)
+		}
+	}
+	return query
+}
+
+//Search for issues. You add some restrictions to the query. such:
+// authors, assignee, state, etc. Check the command help for more options.
+func searchCmd(c *cli.Context) {
+	if c.Args().Present() {
+		issues, err := m.GetIssuesFound(buildQuery(c))
+		if err != nil {
+			pulls.WriteError("%s", err)
+		}
+		fmt.Printf("%c[2K\r", 27)
+		pulls.DisplayIssues(c, issues, c.Bool("no-trunc"))
+	} else {
+		fmt.Fprintf(os.Stdout, "Please enter a search term")
+	}
+
+}
+
 func addComment(number, comment string) {
 	cmt, err := m.AddComment(number, comment)
 	if err != nil {

@@ -33,7 +33,20 @@ func loadCommands(app *cli.App) {
 				cli.BoolFlag{"overwrite", "overwrites a taken issue"},
 			},
 		},
-
+		{
+			Name:   "search",
+			Usage:  "Find issues by state and keyword.",
+			Action: searchCmd,
+			Flags: []cli.Flag{
+				cli.StringFlag{"author", "", "Finds issues created by a certain user"},
+				cli.StringFlag{"assignee", "", "Finds issues that are assigned to a certain user"},
+				cli.StringFlag{"mentions", "", "Finds issues that mention a certain user"},
+				cli.StringFlag{"commenter", "", "Finds issues that a certain user commented on"},
+				cli.StringFlag{"involves", "", "Finds issues that were either created by a certain user, assigned to that user, mention that user, or were commented on by that user"},
+				cli.StringFlag{"labels", "", "Filters issues based on their labels"},
+				cli.StringFlag{"state", "", "Filter issues based on whether they’re open or closed"},
+			},
+		},
 		{
 			Name:   "auth",
 			Usage:  "Add a github token for authentication",

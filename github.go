@@ -348,6 +348,31 @@ func (m *MaintainerManager) GetIssue(number string, comments bool) (*gh.Issue, [
 	return issue, c, nil
 }
 
+// Return all pull requests
+func (m *MaintainerManager) GetIssuesFound(query string) ([]*gh.SearchItem, error) {
+	o := &gh.Options{}
+	o.QueryParams = map[string]string{
+		"sort":     "updated",
+		"order":    "asc",
+		"per_page": "100",
+	}
+	prevSize := -1
+	page := 1
+	issuesFound := []*gh.SearchItem{}
+	for len(issuesFound) != prevSize {
+		o.QueryParams["page"] = strconv.Itoa(page)
+		if issues, err := m.client.SearchIssues(query, o); err != nil {
+			return nil, err
+		} else {
+			prevSize = len(issuesFound)
+			issuesFound = append(issuesFound, issues...)
+			page += 1
+		}
+		fmt.Printf(".")
+	}
+	return issuesFound, nil
+}
+
 // Return all comments for an issue or pull request
 func (m *MaintainerManager) GetComments(number string) ([]gh.Comment, error) {
 	return m.client.Comments(m.repo, number, nil)

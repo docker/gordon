@@ -1,16 +1,16 @@
-package main
+package pulls
 
 import (
 	"bufio"
+	"code.google.com/p/go.codereview/patch"
+	"fmt"
 	"io"
 	"io/ioutil"
-	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"regexp"
-	"os"
 	"strings"
-	"code.google.com/p/go.codereview/patch"
 )
 
 // ReviewPatch reads a git-formatted patch from `src`, and for each file affected by the patch
@@ -32,8 +32,8 @@ func ReviewPatch(src io.Reader) (reviewers map[string][]*Maintainer, err error) 
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range(set.File) {
-		for _, target := range([]string{f.Dst, f.Src}) {
+	for _, f := range set.File {
+		for _, target := range []string{f.Dst, f.Src} {
 			if target == "" {
 				continue
 			}
@@ -50,7 +50,6 @@ func ReviewPatch(src io.Reader) (reviewers map[string][]*Maintainer, err error) 
 	}
 	return reviewers, nil
 }
-
 
 func getMaintainers(target string) (maintainers []*Maintainer, err error) {
 	if _, err := os.Stat(target); err != nil {
@@ -98,13 +97,13 @@ func getMaintainers(target string) (maintainers []*Maintainer, err error) {
 type MaintainerFile map[string][]*Maintainer
 
 type Maintainer struct {
-	Username	string
-	FullName	string
-	Email		string
-	Target		string
-	Active		bool
-	Lead		bool
-	Raw		string
+	Username string
+	FullName string
+	Email    string
+	Target   string
+	Active   bool
+	Lead     bool
+	Raw      string
 }
 
 func LoadMaintainerFile(dir string) (MaintainerFile, error) {
@@ -129,21 +128,21 @@ func LoadMaintainerFile(dir string) (MaintainerFile, error) {
 
 func parseMaintainer(line string) *Maintainer {
 	const (
-		commentIndex	= 1
-		targetIndex	= 3
-		fullnameIndex	= 4
-		emailIndex	= 5
-		usernameIndex	= 7
+		commentIndex  = 1
+		targetIndex   = 3
+		fullnameIndex = 4
+		emailIndex    = 5
+		usernameIndex = 7
 	)
 	re := regexp.MustCompile("^[ \t]*(#|)((?P<target>[^: ]*) *:|) *(?P<fullname>[a-zA-Z][^<]*) *<(?P<email>[^>]*)> *(\\(@(?P<username>[^\\)]+)\\)|).*$")
 	match := re.FindStringSubmatch(line)
 	return &Maintainer{
-		Active:		match[commentIndex] == "",
-		Target:		path.Base(path.Clean(match[targetIndex])),
-		Username:	strings.Trim(match[usernameIndex], " \t"),
-		Email:		strings.Trim(match[emailIndex], " \t"),
-		FullName:	strings.Trim(match[fullnameIndex], " \t"),
-		Raw:		line,
+		Active:   match[commentIndex] == "",
+		Target:   path.Base(path.Clean(match[targetIndex])),
+		Username: strings.Trim(match[usernameIndex], " \t"),
+		Email:    strings.Trim(match[emailIndex], " \t"),
+		FullName: strings.Trim(match[fullnameIndex], " \t"),
+		Raw:      line,
 	}
 }
 

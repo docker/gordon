@@ -81,18 +81,54 @@ func DisplayCommentAdded(cmt gh.Comment) {
 	fmt.Fprintf(os.Stdout, "Comment added at %s\n", cmt.CreatedAt.Format(defaultTimeFormat))
 }
 
-// DisplayIssues prints `issues` to standard output in a human-friendly tabulated format.
-func DisplayIssues(c *cli.Context, issues []*gh.Issue, notrunc bool) {
+func printIssue(c *cli.Context, w *tabwriter.Writer, number int, updatedAt time.Time, login string, title string, comments int) {
+	fmt.Fprintf(w, "%d\t%s\t%s\t%s", number, HumanDuration(time.Since(updatedAt)), login, title)
+	if c.Int("votes") > 0 {
+		votes := strconv.Itoa(comments)
+		if comments >= 2 {
+			votes = brush.Green(votes).String()
+		}
+		fmt.Fprintf(w, "\t%s", votes)
+	}
+	fmt.Fprintf(w, "\n")
+}
+
+// Display Issues prints `issues` to standard output in a human-friendly tabulated format.
+func DisplayIssues(c *cli.Context, v interface{}, notrunc bool) {
 	w := newTabwriter()
 	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tASSIGNEE\tTITLE")
-	fmt.Fprintf(w, "\n")
-	for _, p := range issues {
-		fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", p.Number, HumanDuration(time.Since(p.UpdatedAt)), p.Assignee.Login, p.Title)
+	if c.Int("votes") > 0 {
+		fmt.Fprintf(w, "\tVOTES")
 	}
+	fmt.Fprintf(w, "\n")
 
+	switch issues := v.(type) {
+	case []*gh.Issue:
+		for _, p := range issues {
+			printIssue(c, w, p.Number, p.UpdatedAt, p.Assignee.Login, p.Title, p.Comments)
+		}
+	case []*gh.SearchItem:
+		for _, p := range issues {
+			printIssue(c, w, p.Number, p.UpdatedAt, p.Assignee.Login, p.Title, p.Comments)
+		}
+	}
 	if err := w.Flush(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s", err)
 	}
+}
+
+func DisplayIssue(issue *gh.Issue, comments []gh.Comment) {
+	fmt.Fprint(os.Stdout, brush.Green("Issue:"), "\n")
+	fmt.Fprintf(os.Stdout, "No: %d\nTitle: %s\n\n", issue.Number, issue.Title)
+
+	lines := strings.Split(issue.Body, "\n")
+	for i, l := range lines {
+		lines[i] = "\t" + l
+	}
+	fmt.Fprintf(os.Stdout, "Description:\n\n%s\n\n", strings.Join(lines, "\n"))
+	fmt.Fprintf(os.Stdout, "\n\n")
+
+	DisplayComments(comments)
 }
 
 // HumanDuration returns a human-readable approximation of a duration

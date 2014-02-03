@@ -1,26 +1,44 @@
 package pulls
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	gh "github.com/crosbymichael/octokat"
+	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
 
 // Top level type that manages a repository
-type Maintainer struct {
-	repo   gh.Repo
-	client *gh.Client
+type MaintainerManager struct {
+	repo           gh.Repo
+	client         *gh.Client
+	email          string
+	directoriesMap *MaintainerManagerDirectoriesMap
+	maintainersIds *[]string
+}
+
+type MaintainerManagerDirectoriesMap struct {
+	paths []string
 }
 
 type Config struct {
-	Token string
+	Token    string
+	UserName string
 }
 
-var configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
+const MaintainerManagersFileName = "MAINTAINERS"
+
+var (
+	maintainerDirectoriesMap = MaintainerManagerDirectoriesMap{}
+	maintainersIds           = []string{}
+	configPath               = path.Join(os.Getenv("HOME"), ".maintainercfg")
+)
 
 func LoadConfig() (*Config, error) {
 	var config Config
@@ -54,25 +72,186 @@ func SaveConfig(config Config) error {
 	return nil
 }
 
-func NewMaintainer(client *gh.Client, org, repo string) (*Maintainer, error) {
+func getRepoPath(pth, org string) string {
+	flag := false
+	i := 0
+	repoPath := path.Dir("/")
+	for _, dir := range strings.Split(pth, "/") {
+		if strings.EqualFold(dir, org) {
+			flag = true
+		}
+		if flag {
+			if i >= 2 {
+				repoPath = path.Join(repoPath, dir)
+			}
+			i++
+		}
+	}
+	return repoPath
+}
+
+func getMaintainerManagersIds(pth string) (*[]string, error) {
+	maintainersFileMap := []string{}
+	file, _ := os.Open(pth)
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		m := parseMaintainer(scanner.Text())
+		if m.Username == "" && m.Email == "" {
+			return nil, fmt.Errorf("Incorrect maintainer format: %s", m.Raw)
+		}
+		if m.Email != "" {
+			email := []string{m.Email}
+			maintainersFileMap = append(maintainersFileMap, email...)
+		}
+		if m.Username != "" {
+			userName := []string{m.Username}
+			maintainersFileMap = append(maintainersFileMap, userName...)
+		}
+	}
+	sort.Strings(maintainersFileMap)
+
+	return &maintainersFileMap, nil
+}
+
+func createMaintainerManagerDirectoriesMap(pth, cpth, maintainerEmail, userName string, belongsToOthers bool) error {
+	names, err := ioutil.ReadDir(pth)
+	if err != nil {
+		return err
+	}
+	// Look for the MaintainerManager File
+	foundMaintainerManagersFile := false
+	iAmOneOfTheMaintainerManagers := false
+	belongsToOtherMaintainerManagers := false
+
+	for _, name := range names {
+		if strings.EqualFold(name.Name(), MaintainerManagersFileName) {
+			foundMaintainerManagersFile = true
+			ids, err := getMaintainerManagersIds(path.Join(pth, name.Name()))
+			maintainersIds = append(maintainersIds, (*ids)...)
+			sort.Strings(maintainersIds)
+			if err != nil {
+				return err
+			}
+			i := sort.SearchStrings(*ids, maintainerEmail)
+			if i < len(*ids) && (*ids)[i] == maintainerEmail {
+				iAmOneOfTheMaintainerManagers = true
+			} else {
+				i := sort.SearchStrings(*ids, userName)
+				if i < len(*ids) && (*ids)[i] == userName {
+					iAmOneOfTheMaintainerManagers = true
+				}
+			}
+		}
+	}
+	// Check if we need to add the directory to the maintainer's  directories mapping tree
+	if (!foundMaintainerManagersFile && !belongsToOthers) || iAmOneOfTheMaintainerManagers {
+		tmpcpth := cpth
+		if cpth == "" {
+			tmpcpth = "."
+		}
+		currentPath := []string{tmpcpth}
+		maintainerDirectoriesMap.paths = append(maintainerDirectoriesMap.paths, currentPath...)
+	} else if foundMaintainerManagersFile || belongsToOthers {
+		belongsToOtherMaintainerManagers = true
+	}
+	for _, name := range names {
+		if name.IsDir() && name.Name()[0] != '.' {
+			tmpcpth := path.Join(cpth, name.Name())
+			newPath := path.Join(pth, name.Name())
+			createMaintainerManagerDirectoriesMap(newPath, tmpcpth, maintainerEmail, userName, belongsToOtherMaintainerManagers)
+		}
+	}
+
+	return err
+}
+
+func getOriginPath(repo string) (string, error) {
+	currentPath, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	originPath := path.Dir("/")
+	for _, dir := range strings.Split(currentPath, "/") {
+		originPath = path.Join(originPath, dir)
+		if strings.EqualFold(dir, repo) {
+			break
+		}
+	}
+	return originPath, err
+}
+
+func NewMaintainerManager(client *gh.Client, org, repo string) (*MaintainerManager, error) {
 
 	config, err := LoadConfig()
 	if err == nil {
 		client.WithToken(config.Token)
 	}
-
-	return &Maintainer{
-		repo:   gh.Repo{Name: repo, UserName: org},
-		client: client,
+	originPath, err := getOriginPath(repo)
+	if err != nil {
+		return nil, err
+	}
+	email, err := GetMaintainerManagerEmail()
+	if err != nil {
+		return nil, err
+	}
+	err = createMaintainerManagerDirectoriesMap(originPath, "", email, config.UserName, false)
+	if err != nil {
+		return nil, err
+	}
+	return &MaintainerManager{
+		repo:           gh.Repo{Name: repo, UserName: org},
+		client:         client,
+		directoriesMap: &maintainerDirectoriesMap,
+		email:          email,
+		maintainersIds: &maintainersIds,
 	}, nil
 }
 
-func (m *Maintainer) Repository() (*gh.Repository, error) {
+func (m *MaintainerManager) Repository() (*gh.Repository, error) {
 	return m.client.Repository(m.repo, nil)
 }
 
+func (m *MaintainerManager) IsMaintainer(userName string) bool {
+	i := sort.SearchStrings(*(m.maintainersIds), userName)
+	return (i < len(*(m.maintainersIds)) && (*(m.maintainersIds))[i] == userName)
+}
+
+// Return all the pull requests that I care about
+func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state string) ([]*gh.PullRequest, error) {
+
+	if showAll {
+		return m.GetPullRequests(state)
+	}
+
+	filteredPrs := []*gh.PullRequest{}
+	prs, err := m.GetPullRequests(state)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range prs {
+		prfs, err := m.GetPullRequestFiles(strconv.Itoa(p.Number))
+		if err != nil {
+			return nil, err
+		}
+		for _, prf := range prfs {
+			dirPath := filepath.Dir(prf.FileName)
+			i := sort.SearchStrings((*m.directoriesMap).paths, dirPath)
+			if i < len(m.directoriesMap.paths) && (*m.directoriesMap).paths[i] == dirPath {
+				pr := []*gh.PullRequest{p}
+				filteredPrs = append(filteredPrs, pr...)
+				break
+			}
+		}
+		fmt.Printf(".")
+
+	}
+	return filteredPrs, nil
+}
+
 // Return all pull requests
-func (m *Maintainer) GetPullRequests(state string) ([]*gh.PullRequest, error) {
+func (m *MaintainerManager) GetPullRequests(state string) ([]*gh.PullRequest, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{
 		"sort":      "updated",
@@ -97,7 +276,22 @@ func (m *Maintainer) GetPullRequests(state string) ([]*gh.PullRequest, error) {
 	return allPRs, nil
 }
 
-func (m *Maintainer) GetFirstPullRequest(state, sortBy string) (*gh.PullRequest, error) {
+// Return all pull request Files
+func (m *MaintainerManager) GetPullRequestFiles(number string) ([]*gh.PullRequestFile, error) {
+	o := &gh.Options{}
+	o.QueryParams = map[string]string{}
+	allPrFiles := []*gh.PullRequestFile{}
+
+	if prfs, err := m.client.PullRequestFiles(m.repo, number, o); err != nil {
+		return nil, err
+	} else {
+		allPrFiles = append(allPrFiles, prfs...)
+
+	}
+	return allPrFiles, nil
+}
+
+func (m *MaintainerManager) GetFirstPullRequest(state, sortBy string) (*gh.PullRequest, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{
 		"state":     state,
@@ -118,7 +312,7 @@ func (m *Maintainer) GetFirstPullRequest(state, sortBy string) (*gh.PullRequest,
 
 // Return a single pull request
 // Return pr's comments if requested
-func (m *Maintainer) GetPullRequest(number string, comments bool) (*gh.PullRequest, []gh.Comment, error) {
+func (m *MaintainerManager) GetPullRequest(number string, comments bool) (*gh.PullRequest, []gh.Comment, error) {
 	var c []gh.Comment
 	pr, err := m.client.PullRequest(m.repo, number, nil)
 	if err != nil {
@@ -133,19 +327,65 @@ func (m *Maintainer) GetPullRequest(number string, comments bool) (*gh.PullReque
 	return pr, c, nil
 }
 
+// Return a single issue
+// Return issue's comments if requested
+func (m *MaintainerManager) GetIssue(number string, comments bool) (*gh.Issue, []gh.Comment, error) {
+	var c []gh.Comment
+	num, err := strconv.Atoi(number)
+	if err != nil {
+		return nil, nil, err
+	}
+	issue, err := m.client.Issue(m.repo, num, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if comments {
+		c, err = m.GetComments(number)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	return issue, c, nil
+}
+
+// Return all pull requests
+func (m *MaintainerManager) GetIssuesFound(query string) ([]*gh.SearchItem, error) {
+	o := &gh.Options{}
+	o.QueryParams = map[string]string{
+		"sort":     "updated",
+		"order":    "asc",
+		"per_page": "100",
+	}
+	prevSize := -1
+	page := 1
+	issuesFound := []*gh.SearchItem{}
+	for len(issuesFound) != prevSize {
+		o.QueryParams["page"] = strconv.Itoa(page)
+		if issues, err := m.client.SearchIssues(query, o); err != nil {
+			return nil, err
+		} else {
+			prevSize = len(issuesFound)
+			issuesFound = append(issuesFound, issues...)
+			page += 1
+		}
+		fmt.Printf(".")
+	}
+	return issuesFound, nil
+}
+
 // Return all comments for an issue or pull request
-func (m *Maintainer) GetComments(number string) ([]gh.Comment, error) {
+func (m *MaintainerManager) GetComments(number string) ([]gh.Comment, error) {
 	return m.client.Comments(m.repo, number, nil)
 }
 
 // Add a comment to an existing pull request
-func (m *Maintainer) AddComment(number, comment string) (gh.Comment, error) {
+func (m *MaintainerManager) AddComment(number, comment string) (gh.Comment, error) {
 	return m.client.AddComment(m.repo, number, comment)
 }
 
 // Merge a pull request
 // If no LGTMs are in the comments require force to be true
-func (m *Maintainer) MergePullRequest(number, comment string, force bool) (gh.Merge, error) {
+func (m *MaintainerManager) MergePullRequest(number, comment string, force bool) (gh.Merge, error) {
 	comments, err := m.GetComments(number)
 	if err != nil {
 		return gh.Merge{}, err
@@ -171,7 +411,7 @@ func (m *Maintainer) MergePullRequest(number, comment string, force bool) (gh.Me
 // Checkout the pull request into the working tree of
 // the users repository.
 // This will mimic the operations on the manual merge view
-func (m *Maintainer) Checkout(pr *gh.PullRequest) error {
+func (m *MaintainerManager) Checkout(pr *gh.PullRequest) error {
 	var (
 		userBranch        = fmt.Sprintf("%s-%s", pr.User.Login, pr.Head.Ref)
 		destinationBranch = pr.Base.Ref
@@ -188,7 +428,31 @@ func (m *Maintainer) Checkout(pr *gh.PullRequest) error {
 	return nil
 }
 
-func (m *Maintainer) GetFirstIssue(state, sortBy string) (*gh.Issue, error) {
+// Get the user information from the authenticated user
+func (m *MaintainerManager) GetGithubUser() (*gh.User, error) {
+	user, err := m.client.User("", nil)
+	if err != nil {
+		return nil, nil
+	}
+	return user, err
+}
+
+// Patch an issue
+func (m *MaintainerManager) PatchIssue(number string, issue *gh.Issue) (*gh.Issue, error) {
+	o := &gh.Options{}
+	o.Params = map[string]string{
+		"title":    issue.Title,
+		"body":     issue.Body,
+		"assignee": issue.Assignee.Login,
+	}
+	patchedIssue, err := m.client.PatchIssue(m.repo, number, o)
+	if err != nil {
+		return nil, nil
+	}
+	return patchedIssue, err
+}
+
+func (m *MaintainerManager) GetFirstIssue(state, sortBy string) (*gh.Issue, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{
 		"state":     state,
@@ -210,7 +474,7 @@ func (m *Maintainer) GetFirstIssue(state, sortBy string) (*gh.Issue, error) {
 // GetIssues queries the GithubAPI for all issues matching the state `state` and the
 // assignee `assignee`.
 // See http://developer.github.com/v3/issues/#list-issues-for-a-repository
-func (m *Maintainer) GetIssues(state, assignee string) ([]*gh.Issue, error) {
+func (m *MaintainerManager) GetIssues(state, assignee string) ([]*gh.Issue, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{
 		"sort":      "updated",

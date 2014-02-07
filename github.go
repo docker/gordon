@@ -348,7 +348,7 @@ func (m *MaintainerManager) GetIssue(number string, comments bool) (*gh.Issue, [
 	return issue, c, nil
 }
 
-// Return all pull requests
+// Return all issue found
 func (m *MaintainerManager) GetIssuesFound(query string) ([]*gh.SearchItem, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{
@@ -371,6 +371,17 @@ func (m *MaintainerManager) GetIssuesFound(query string) ([]*gh.SearchItem, erro
 		fmt.Printf(".")
 	}
 	return issuesFound, nil
+}
+
+// Return contributors list
+func (m *MaintainerManager) GetContributors() ([]*gh.Contributor, error) {
+	o := &gh.Options{}
+	contributors, err := m.client.Contributors(m.repo, o)
+	if err != nil {
+		return nil, err
+	}
+
+	return contributors, nil
 }
 
 // Return all comments for an issue or pull request

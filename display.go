@@ -6,6 +6,7 @@ import (
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -47,6 +48,48 @@ func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) 
 			}
 			fmt.Fprintf(w, "\t%s", lgtm)
 		}
+		fmt.Fprintf(w, "\n")
+	}
+
+	if err := w.Flush(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s", err)
+	}
+}
+
+func DisplayContributors(c *cli.Context, contributors []*gh.Contributor) {
+	var (
+		w                 = newTabwriter()
+		contributorsStats []ContributorStats
+	)
+
+	for _, contrib := range contributors {
+		contribStats := ContributorStats{}
+		contribStats.Name = contrib.Author.Login
+		for _, week := range contrib.Weeks {
+			contribStats.Additions += week.Additions
+			contribStats.Deletions += week.Deletions
+			contribStats.Commits += week.Commits
+		}
+		contributorsStats = append(contributorsStats, []ContributorStats{contribStats}...)
+	}
+	if c.Bool("additions") {
+		sort.Sort(ByAdditions(contributorsStats))
+	} else if c.Bool("deletions") {
+		sort.Sort(ByDeletions(contributorsStats))
+	} else if c.Bool("commits") {
+		sort.Sort(ByCommits(contributorsStats))
+	} else {
+		// Sort by default by Commits
+		sort.Sort(ByCommits(contributorsStats))
+	}
+	topN := c.Int("top")
+	fmt.Fprintf(w, "CONTRIBUTOR\tADDITIONS\tDELETIONS\tCOMMITS")
+	fmt.Fprintf(w, "\n")
+	for i := 0; i < len(contributorsStats) && i < topN; i++ {
+		fmt.Fprintf(w, "%s\t%d\t%d\t%d", contributorsStats[i].Name,
+			contributorsStats[i].Additions,
+			contributorsStats[i].Deletions,
+			contributorsStats[i].Commits)
 		fmt.Fprintf(w, "\n")
 	}
 

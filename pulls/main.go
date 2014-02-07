@@ -112,6 +112,15 @@ func showCmd(c *cli.Context) {
 	}
 }
 
+// Show contributors stats
+func contributorsCmd(c *cli.Context) {
+	contributors, err := m.GetContributors()
+	if err != nil {
+		pulls.WriteError("%s", err)
+	}
+	pulls.DisplayContributors(c, contributors)
+}
+
 // Show the reviewers for this pull request
 func reviewersCmd(c *cli.Context) {
 	number := c.Args()[0]

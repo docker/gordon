@@ -74,5 +74,16 @@ func loadCommands(app *cli.App) {
 			Usage:  "Use the hierarchy of MAINTAINERS files to list who should review a pull request",
 			Action: reviewersCmd,
 		},
+		{
+			Name:   "contributors",
+			Usage:  "Show the contributors list with additions, deletions, and commit counts. Default: sorted by Commits",
+			Action: contributorsCmd,
+			Flags: []cli.Flag{
+				cli.BoolFlag{"additions", "sort by additions"},
+				cli.BoolFlag{"deletions", "sort by deletions"},
+				cli.BoolFlag{"commits", "sort by commits"},
+				cli.IntFlag{"top", 10, "top N contributors"},
+			},
+		},
 	}
 }

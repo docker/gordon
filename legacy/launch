@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# get the real username and password
+source .api_credentials
+
+HIPACHE_CONTAINER=$(docker ps | grep hipache | cut -d" " -f1)
+
+if [[ -z "$HIPACHE_CONTAINER" ]]; then
+    echo "hipache is not running"
+    exit 1
+fi
+
+HOST=172.17.42.1
+GORDON_DOMAIN=$GORDON_HOST
+
+REDIS_PORT=$(docker port $HIPACHE_CONTAINER 6379)
+REDIS_HOST=$HOST
+
+API_CONTAINER=$(docker run -d \
+    -e GITHUB_USERNAME=$GITHUB_USERNAME \
+    -e GITHUB_PASSWORD=$GITHUB_PASSWORD \
+    -e GITHUB_REPO="dotcloud/docker" \
+    -e REDIS_HOST=$REDIS_HOST \
+    -e REDIS_PORT=$REDIS_PORT \
+    registry.stinemat.es/keeb/gordon)
+
+API_PORT=$(docker port $API_CONTAINER 5000)
+API_HOST=$HOST
+
+# clear out old keys
+redis-cli -h $REDIS_HOST -p $REDIS_PORT del frontend:$GORDON_DOMAIN
+redis-cli -h $REDIS_HOST -p $REDIS_PORT rpush frontend:$GORDON_DOMAIN api
+redis-cli -h $REDIS_HOST -p $REDIS_PORT rpush frontend:$GORDON_DOMAIN http://$API_HOST:$API_PORT
+

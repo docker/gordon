@@ -16,11 +16,12 @@ import (
 
 // Top level type that manages a repository
 type MaintainerManager struct {
-	repo           gh.Repo
-	client         *gh.Client
-	email          string
-	directoriesMap *MaintainerManagerDirectoriesMap
-	maintainersIds *[]string
+	repo              gh.Repo
+	client            *gh.Client
+	email             string
+	maintainerDirMap  *MaintainerManagerDirectoriesMap
+	maintainersIds    *[]string
+	maintainersDirMap *map[string][]*Maintainer
 }
 
 type MaintainerManagerDirectoriesMap struct {
@@ -35,9 +36,12 @@ type Config struct {
 const MaintainerManagersFileName = "MAINTAINERS"
 
 var (
-	maintainerDirectoriesMap = MaintainerManagerDirectoriesMap{}
-	maintainersIds           = []string{}
-	configPath               = path.Join(os.Getenv("HOME"), ".maintainercfg")
+	maintainerDirMap  = MaintainerManagerDirectoriesMap{}
+	maintainersIds    = []string{}
+	maintainersDirMap = map[string][]*Maintainer{}
+	belongsToOthers   = false
+	fileMaintainers   = []*Maintainer{}
+	configPath        = path.Join(os.Getenv("HOME"), ".maintainercfg")
 )
 
 func LoadConfig() (*Config, error) {
@@ -90,16 +94,17 @@ func getRepoPath(pth, org string) string {
 	return repoPath
 }
 
-func getMaintainerManagersIds(pth string) (*[]string, error) {
+func getMaintainerManagersIds(pth string) (*[]string, []*Maintainer, error) {
 	maintainersFileMap := []string{}
 	file, _ := os.Open(pth)
 	scanner := bufio.NewScanner(file)
-
+	var maintainers = []*Maintainer{}
 	for scanner.Scan() {
 		m := parseMaintainer(scanner.Text())
 		if m.Username == "" && m.Email == "" {
-			return nil, fmt.Errorf("Incorrect maintainer format: %s", m.Raw)
+			return nil, nil, fmt.Errorf("Incorrect maintainer format: %s", m.Raw)
 		}
+		maintainers = append(maintainers, []*Maintainer{m}...)
 		if m.Email != "" {
 			email := []string{m.Email}
 			maintainersFileMap = append(maintainersFileMap, email...)
@@ -111,23 +116,26 @@ func getMaintainerManagersIds(pth string) (*[]string, error) {
 	}
 	sort.Strings(maintainersFileMap)
 
-	return &maintainersFileMap, nil
+	return &maintainersFileMap, maintainers, nil
 }
 
-func createMaintainerManagerDirectoriesMap(pth, cpth, maintainerEmail, userName string, belongsToOthers bool) error {
+func createMaintainerManagersDirectoriesMap(pth, cpth, maintainerEmail, userName string) error {
 	names, err := ioutil.ReadDir(pth)
 	if err != nil {
 		return err
 	}
 	// Look for the MaintainerManager File
-	foundMaintainerManagersFile := false
-	iAmOneOfTheMaintainerManagers := false
-	belongsToOtherMaintainerManagers := false
+	var (
+		foundMaintainerManagersFile      = false
+		iAmOneOfTheMaintainerManagers    = false
+		belongsToOtherMaintainerManagers = false
+	)
 
 	for _, name := range names {
 		if strings.EqualFold(name.Name(), MaintainerManagersFileName) {
 			foundMaintainerManagersFile = true
-			ids, err := getMaintainerManagersIds(path.Join(pth, name.Name()))
+			var ids = &[]string{}
+			ids, fileMaintainers, err = getMaintainerManagersIds(path.Join(pth, name.Name()))
 			maintainersIds = append(maintainersIds, (*ids)...)
 			sort.Strings(maintainersIds)
 			if err != nil {
@@ -144,14 +152,19 @@ func createMaintainerManagerDirectoriesMap(pth, cpth, maintainerEmail, userName 
 			}
 		}
 	}
+
+	// Save the maintainers list related to the current directory
+	tmpcpth := cpth
+	if cpth == "" {
+		tmpcpth = "."
+	}
+	maintainersCurrentDirectory := append([]*Maintainer{}, (fileMaintainers)...)
+	maintainersDirMap[tmpcpth] = maintainersCurrentDirectory
+
 	// Check if we need to add the directory to the maintainer's  directories mapping tree
 	if (!foundMaintainerManagersFile && !belongsToOthers) || iAmOneOfTheMaintainerManagers {
-		tmpcpth := cpth
-		if cpth == "" {
-			tmpcpth = "."
-		}
 		currentPath := []string{tmpcpth}
-		maintainerDirectoriesMap.paths = append(maintainerDirectoriesMap.paths, currentPath...)
+		maintainerDirMap.paths = append(maintainerDirMap.paths, currentPath...)
 	} else if foundMaintainerManagersFile || belongsToOthers {
 		belongsToOtherMaintainerManagers = true
 	}
@@ -159,7 +172,8 @@ func createMaintainerManagerDirectoriesMap(pth, cpth, maintainerEmail, userName 
 		if name.IsDir() && name.Name()[0] != '.' {
 			tmpcpth := path.Join(cpth, name.Name())
 			newPath := path.Join(pth, name.Name())
-			createMaintainerManagerDirectoriesMap(newPath, tmpcpth, maintainerEmail, userName, belongsToOtherMaintainerManagers)
+			belongsToOthers = belongsToOtherMaintainerManagers
+			createMaintainerManagersDirectoriesMap(newPath, tmpcpth, maintainerEmail, userName)
 		}
 	}
 
@@ -196,16 +210,17 @@ func NewMaintainerManager(client *gh.Client, org, repo string) (*MaintainerManag
 	if err != nil {
 		return nil, err
 	}
-	err = createMaintainerManagerDirectoriesMap(originPath, "", email, config.UserName, false)
+	err = createMaintainerManagersDirectoriesMap(originPath, "", email, config.UserName)
 	if err != nil {
 		return nil, err
 	}
 	return &MaintainerManager{
-		repo:           gh.Repo{Name: repo, UserName: org},
-		client:         client,
-		directoriesMap: &maintainerDirectoriesMap,
-		email:          email,
-		maintainersIds: &maintainersIds,
+		repo:              gh.Repo{Name: repo, UserName: org},
+		client:            client,
+		maintainerDirMap:  &maintainerDirMap,
+		email:             email,
+		maintainersIds:    &maintainersIds,
+		maintainersDirMap: &maintainersDirMap,
 	}, nil
 }
 
@@ -216,6 +231,10 @@ func (m *MaintainerManager) Repository() (*gh.Repository, error) {
 func (m *MaintainerManager) IsMaintainer(userName string) bool {
 	i := sort.SearchStrings(*(m.maintainersIds), userName)
 	return (i < len(*(m.maintainersIds)) && (*(m.maintainersIds))[i] == userName)
+}
+
+func (m *MaintainerManager) GetMaintainersDirMap() *map[string][]*Maintainer {
+	return m.maintainersDirMap
 }
 
 // Return all the pull requests that I care about
@@ -237,8 +256,8 @@ func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state st
 		}
 		for _, prf := range prfs {
 			dirPath := filepath.Dir(prf.FileName)
-			i := sort.SearchStrings((*m.directoriesMap).paths, dirPath)
-			if i < len(m.directoriesMap.paths) && (*m.directoriesMap).paths[i] == dirPath {
+			i := sort.SearchStrings((*m.maintainerDirMap).paths, dirPath)
+			if i < len(m.maintainerDirMap.paths) && (*m.maintainerDirMap).paths[i] == dirPath {
 				pr := []*gh.PullRequest{p}
 				filteredPrs = append(filteredPrs, pr...)
 				break

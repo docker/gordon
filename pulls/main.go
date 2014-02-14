@@ -138,15 +138,11 @@ func reviewersCmd(c *cli.Context) {
 		}
 		patch = resp.Body
 	}
-	reviewers, err := gordon.ReviewPatch(patch)
+	reviewers, err := gordon.ReviewPatch(patch, m.GetMaintainersDirMap())
 	if err != nil {
 		gordon.WriteError("%s", err)
 	}
-	for _, fileReviewers := range reviewers {
-		for _, reviewer := range fileReviewers {
-			fmt.Printf("%s\n", reviewer.Username)
-		}
-	}
+	gordon.DisplayReviewers(c, reviewers)
 }
 
 // This is the top level command for

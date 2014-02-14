@@ -14,15 +14,16 @@ import (
 )
 
 // ReviewPatch reads a git-formatted patch from `src`, and for each file affected by the patch
-// it looks up the hierarchy of MAINTAINERS files in the current directory to
-// determine who should review the patch.
+// it assign its Maintainers based on the current repository tree directories
+// The list of Maintainers are generated when the MaintainerManager object is instantiated.
+//
 // The result is a map where the keys are the paths of files affected by the patch,
 // and the values are the maintainers assigned to review that partiular file.
 //
 // There is no duplicate checks: the same maintainer may be present in multiple entries
 // of the map, or even multiple times in the same entry if the MAINTAINERS file has
 // duplicate lines.
-func ReviewPatch(src io.Reader) (reviewers map[string][]*Maintainer, err error) {
+func ReviewPatch(src io.Reader, maintainersDirMap *map[string][]*Maintainer) (reviewers map[string][]*Maintainer, err error) {
 	reviewers = make(map[string][]*Maintainer)
 	input, err := ioutil.ReadAll(src)
 	if err != nil {
@@ -41,16 +42,23 @@ func ReviewPatch(src io.Reader) (reviewers map[string][]*Maintainer, err error) 
 			if _, exists := reviewers[target]; exists {
 				continue
 			}
-			maintainers, err := getMaintainers(target)
-			if err != nil {
-				return nil, fmt.Errorf("%s: %s\n", target, err)
+			targetDir := "."
+			items := strings.Split(target, "/")
+			for i := 0; i < len(items)-1; i++ {
+				if targetDir == "." {
+					targetDir = items[i]
+				} else {
+					targetDir = path.Join(targetDir, items[i])
+				}
 			}
+			maintainers := (*maintainersDirMap)[targetDir]
 			reviewers[target] = maintainers
 		}
 	}
 	return reviewers, nil
 }
 
+// Currently not being used
 func getMaintainers(target string) (maintainers []*Maintainer, err error) {
 	if _, err := os.Stat(target); err != nil {
 		return nil, err
@@ -106,6 +114,7 @@ type Maintainer struct {
 	Raw      string
 }
 
+// Currently not being used
 func LoadMaintainerFile(dir string) (MaintainerFile, error) {
 	src, err := os.Open(path.Join(dir, "MAINTAINERS"))
 	if err != nil {
@@ -146,6 +155,8 @@ func parseMaintainer(line string) *Maintainer {
 	}
 }
 
+// Currently not being used
+//
 // TopMostMaintainerFile moves up the directory tree looking for a MAINTAINERS file,
 // parses the top-most file it finds, and returns its contents.
 // This is used to find the top-level maintainer of a project for certain

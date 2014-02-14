@@ -4,30 +4,30 @@ import (
 	"fmt"
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
-	"github.com/crosbymichael/pulls"
-	"github.com/crosbymichael/pulls/filters"
+	"github.com/dotcloud/gordon"
+	"github.com/dotcloud/gordon/filters"
 	"os"
 	"path"
 	"time"
 )
 
 var (
-	m          *pulls.MaintainerManager
+	m          *gordon.MaintainerManager
 	configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
 )
 
 func alruCmd(c *cli.Context) {
 	lru, err := m.GetFirstIssue("open", "updated")
 	if err != nil {
-		pulls.WriteError("Error getting issues: %s", err)
+		gordon.WriteError("Error getting issues: %s", err)
 	}
-	fmt.Printf("%v (#%d)\n", pulls.HumanDuration(time.Since(lru.UpdatedAt)), lru.Number)
+	fmt.Printf("%v (#%d)\n", gordon.HumanDuration(time.Since(lru.UpdatedAt)), lru.Number)
 }
 
 func repositoryInfoCmd(c *cli.Context) {
 	r, err := m.Repository()
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
 }
@@ -39,11 +39,11 @@ func takeCmd(c *cli.Context) {
 		number := c.Args()[0]
 		issue, _, err := m.GetIssue(number, false)
 		if err != nil {
-			pulls.WriteError("%s", err)
+			gordon.WriteError("%s", err)
 		}
 		user, err := m.GetGithubUser()
 		if err != nil {
-			pulls.WriteError("%s", err)
+			gordon.WriteError("%s", err)
 		}
 		if issue.Assignee.Login != "" && !c.Bool("overwrite") {
 			fmt.Fprintf(os.Stdout, "Use the flag --overwrite to take the issue from %s", issue.Assignee.Login)
@@ -52,7 +52,7 @@ func takeCmd(c *cli.Context) {
 		issue.Assignee = *user
 		patchedIssue, err := m.PatchIssue(number, issue)
 		if err != nil {
-			pulls.WriteError("%s", err)
+			gordon.WriteError("%s", err)
 		}
 		if patchedIssue.Assignee.Login != user.Login {
 			m.AddComment(number, "#volunteer")
@@ -69,7 +69,7 @@ func takeCmd(c *cli.Context) {
 func buildQuery(c *cli.Context) string {
 	r, err := m.Repository()
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 	// standard parameters
 	query := fmt.Sprintf("q=%s+repo:%s", c.Args()[0], r.FullName)
@@ -103,10 +103,10 @@ func searchCmd(c *cli.Context) {
 	if c.Args().Present() {
 		issues, err := m.GetIssuesFound(buildQuery(c))
 		if err != nil {
-			pulls.WriteError("%s", err)
+			gordon.WriteError("%s", err)
 		}
 		fmt.Printf("%c[2K\r", 27)
-		pulls.DisplayIssues(c, issues, c.Bool("no-trunc"))
+		gordon.DisplayIssues(c, issues, c.Bool("no-trunc"))
 	} else {
 		fmt.Fprintf(os.Stdout, "Please enter a search term")
 	}
@@ -116,9 +116,9 @@ func searchCmd(c *cli.Context) {
 func addComment(number, comment string) {
 	cmt, err := m.AddComment(number, comment)
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
-	pulls.DisplayCommentAdded(cmt)
+	gordon.DisplayCommentAdded(cmt)
 }
 
 func mainCmd(c *cli.Context) {
@@ -126,11 +126,11 @@ func mainCmd(c *cli.Context) {
 		filter := filters.GetIssueFilter(c)
 		issues, err := filter(m.GetIssues("open", c.String("assigned")))
 		if err != nil {
-			pulls.WriteError("Error getting issues: %s", err)
+			gordon.WriteError("Error getting issues: %s", err)
 		}
 
 		fmt.Printf("%c[2K\r", 27)
-		pulls.DisplayIssues(c, issues, c.Bool("no-trunc"))
+		gordon.DisplayIssues(c, issues, c.Bool("no-trunc"))
 		return
 	}
 
@@ -152,32 +152,32 @@ func mainCmd(c *cli.Context) {
 
 	issue, comments, err := m.GetIssue(number, true)
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
-	pulls.DisplayIssue(issue, comments)
+	gordon.DisplayIssue(issue, comments)
 }
 
 func authCmd(c *cli.Context) {
-	config, err := pulls.LoadConfig()
+	config, err := gordon.LoadConfig()
 	if err != nil {
-		config = &pulls.Config{}
+		config = &gordon.Config{}
 	}
 	token := c.String("add")
 	userName := c.String("user")
 	if userName != "" {
 		config.UserName = userName
-		if err := pulls.SaveConfig(*config); err != nil {
-			pulls.WriteError("%s", err)
+		if err := gordon.SaveConfig(*config); err != nil {
+			gordon.WriteError("%s", err)
 		}
 	}
 	if token != "" {
 		config.Token = token
-		if err := pulls.SaveConfig(*config); err != nil {
-			pulls.WriteError("%s", err)
+		if err := gordon.SaveConfig(*config); err != nil {
+			gordon.WriteError("%s", err)
 		}
 	}
 	// Display token and user information
-	if config, err := pulls.LoadConfig(); err == nil {
+	if config, err := gordon.LoadConfig(); err == nil {
 		if config.UserName != "" {
 			fmt.Fprintf(os.Stdout, "Token: %s, UserName: %s\n", config.Token, config.UserName)
 		} else {
@@ -199,11 +199,11 @@ func main() {
 
 	client := gh.NewClient()
 
-	org, name, err := pulls.GetOriginUrl()
+	org, name, err := gordon.GetOriginUrl()
 	if err != nil {
 		panic(err)
 	}
-	t, err := pulls.NewMaintainerManager(client, org, name)
+	t, err := gordon.NewMaintainerManager(client, org, name)
 	if err != nil {
 		panic(err)
 	}

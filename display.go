@@ -1,4 +1,4 @@
-package pulls
+package gordon
 
 import (
 	"fmt"

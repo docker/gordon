@@ -5,8 +5,8 @@ import (
 	"github.com/aybabtme/color/brush"
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
-	"github.com/crosbymichael/pulls"
-	"github.com/crosbymichael/pulls/filters"
+	"github.com/dotcloud/gordon"
+	"github.com/dotcloud/gordon/filters"
 	"io"
 	"net/http"
 	"os"
@@ -14,18 +14,18 @@ import (
 )
 
 var (
-	m *pulls.MaintainerManager
+	m *gordon.MaintainerManager
 )
 
 func displayAllPullRequests(c *cli.Context, state string, showAll bool) {
 	filter := filters.GetPullRequestFilter(c)
 	prs, err := filter(m.GetPullRequestsThatICareAbout(showAll, state))
 	if err != nil {
-		pulls.WriteError("Error getting pull requests %s", err)
+		gordon.WriteError("Error getting pull requests %s", err)
 	}
 
 	fmt.Printf("%c[2K\r", 27)
-	pulls.DisplayPullRequests(c, prs, c.Bool("no-trunc"))
+	gordon.DisplayPullRequests(c, prs, c.Bool("no-trunc"))
 }
 
 func displayAllPullRequestFiles(c *cli.Context, number string) {
@@ -42,23 +42,23 @@ func displayAllPullRequestFiles(c *cli.Context, number string) {
 func alruCmd(c *cli.Context) {
 	lru, err := m.GetFirstPullRequest("open", "updated")
 	if err != nil {
-		pulls.WriteError("Error getting pull requests: %s", err)
+		gordon.WriteError("Error getting pull requests: %s", err)
 	}
-	fmt.Printf("%v (#%d)\n", pulls.HumanDuration(time.Since(lru.UpdatedAt)), lru.Number)
+	fmt.Printf("%v (#%d)\n", gordon.HumanDuration(time.Since(lru.UpdatedAt)), lru.Number)
 }
 
 func addComment(number, comment string) {
 	cmt, err := m.AddComment(number, comment)
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
-	pulls.DisplayCommentAdded(cmt)
+	gordon.DisplayCommentAdded(cmt)
 }
 
 func repositoryInfoCmd(c *cli.Context) {
 	r, err := m.Repository()
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
 }
@@ -67,12 +67,12 @@ func mergeCmd(c *cli.Context) {
 	number := c.Args()[0]
 	merge, err := m.MergePullRequest(number, c.String("m"), c.Bool("force"))
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 	if merge.Merged {
 		fmt.Fprintf(os.Stdout, "%s\n", brush.Green(merge.Message))
 	} else {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 }
 
@@ -80,10 +80,10 @@ func checkoutCmd(c *cli.Context) {
 	number := c.Args()[0]
 	pr, _, err := m.GetPullRequest(number, false)
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 	if err := m.Checkout(pr); err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 }
 
@@ -91,7 +91,7 @@ func checkoutCmd(c *cli.Context) {
 func approveCmd(c *cli.Context) {
 	number := c.Args().First()
 	if _, err := m.AddComment(number, "LGTM"); err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 	fmt.Fprintf(os.Stdout, "Pull request %s approved\n", brush.Green(number))
 }
@@ -101,14 +101,14 @@ func showCmd(c *cli.Context) {
 	number := c.Args()[0]
 	pr, _, err := m.GetPullRequest(number, false)
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 	patch, err := http.Get(pr.DiffURL)
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 	if _, err := io.Copy(os.Stdout, patch.Body); err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 }
 
@@ -116,9 +116,9 @@ func showCmd(c *cli.Context) {
 func contributorsCmd(c *cli.Context) {
 	contributors, err := m.GetContributors()
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
-	pulls.DisplayContributors(c, contributors)
+	gordon.DisplayContributors(c, contributors)
 }
 
 // Show the reviewers for this pull request
@@ -130,17 +130,17 @@ func reviewersCmd(c *cli.Context) {
 	} else {
 		pr, _, err := m.GetPullRequest(number, false)
 		if err != nil {
-			pulls.WriteError("%s", err)
+			gordon.WriteError("%s", err)
 		}
 		resp, err := http.Get(pr.DiffURL)
 		if err != nil {
-			pulls.WriteError("%s", err)
+			gordon.WriteError("%s", err)
 		}
 		patch = resp.Body
 	}
-	reviewers, err := pulls.ReviewPatch(patch)
+	reviewers, err := gordon.ReviewPatch(patch)
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 	for _, fileReviewers := range reviewers {
 		for _, reviewer := range fileReviewers {
@@ -176,32 +176,32 @@ func mainCmd(c *cli.Context) {
 	}
 	pr, comments, err := m.GetPullRequest(number, true)
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
-	pulls.DisplayPullRequest(pr, comments)
+	gordon.DisplayPullRequest(pr, comments)
 }
 
 func authCmd(c *cli.Context) {
-	config, err := pulls.LoadConfig()
+	config, err := gordon.LoadConfig()
 	if err != nil {
-		config = &pulls.Config{}
+		config = &gordon.Config{}
 	}
 	token := c.String("add")
 	userName := c.String("user")
 	if userName != "" {
 		config.UserName = userName
-		if err := pulls.SaveConfig(*config); err != nil {
-			pulls.WriteError("%s", err)
+		if err := gordon.SaveConfig(*config); err != nil {
+			gordon.WriteError("%s", err)
 		}
 	}
 	if token != "" {
 		config.Token = token
-		if err := pulls.SaveConfig(*config); err != nil {
-			pulls.WriteError("%s", err)
+		if err := gordon.SaveConfig(*config); err != nil {
+			gordon.WriteError("%s", err)
 		}
 	}
 	// Display token and user information
-	if config, err := pulls.LoadConfig(); err == nil {
+	if config, err := gordon.LoadConfig(); err == nil {
 		if config.UserName != "" {
 			fmt.Fprintf(os.Stdout, "Token: %s, UserName: %s\n", config.Token, config.UserName)
 		} else {
@@ -224,13 +224,13 @@ func main() {
 
 	client := gh.NewClient()
 
-	org, name, err := pulls.GetOriginUrl()
+	org, name, err := gordon.GetOriginUrl()
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
-	t, err := pulls.NewMaintainerManager(client, org, name)
+	t, err := gordon.NewMaintainerManager(client, org, name)
 	if err != nil {
-		pulls.WriteError("%s", err)
+		gordon.WriteError("%s", err)
 	}
 	m = t
 

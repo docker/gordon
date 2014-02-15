@@ -100,18 +100,20 @@ func getMaintainerManagersIds(pth string) (*[]string, []*Maintainer, error) {
 	scanner := bufio.NewScanner(file)
 	var maintainers = []*Maintainer{}
 	for scanner.Scan() {
-		m := parseMaintainer(scanner.Text())
-		if m.Username == "" && m.Email == "" {
-			return nil, nil, fmt.Errorf("Incorrect maintainer format: %s", m.Raw)
-		}
-		maintainers = append(maintainers, []*Maintainer{m}...)
-		if m.Email != "" {
-			email := []string{m.Email}
-			maintainersFileMap = append(maintainersFileMap, email...)
-		}
-		if m.Username != "" {
-			userName := []string{m.Username}
-			maintainersFileMap = append(maintainersFileMap, userName...)
+		if scanner.Text() != "" {
+			m := parseMaintainer(scanner.Text())
+			if m.Username == "" && m.Email == "" {
+				return nil, nil, fmt.Errorf("Incorrect maintainer format: %s", m.Raw)
+			}
+			maintainers = append(maintainers, []*Maintainer{m}...)
+			if m.Email != "" {
+				email := []string{m.Email}
+				maintainersFileMap = append(maintainersFileMap, email...)
+			}
+			if m.Username != "" {
+				userName := []string{m.Username}
+				maintainersFileMap = append(maintainersFileMap, userName...)
+			}
 		}
 	}
 	sort.Strings(maintainersFileMap)

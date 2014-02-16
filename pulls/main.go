@@ -64,6 +64,10 @@ func repositoryInfoCmd(c *cli.Context) {
 }
 
 func mergeCmd(c *cli.Context) {
+	if !c.Args().Present() {
+		fmt.Println("Please enter a pull request number")
+		return
+	}
 	number := c.Args()[0]
 	merge, err := m.MergePullRequest(number, c.String("m"), c.Bool("force"))
 	if err != nil {
@@ -77,6 +81,10 @@ func mergeCmd(c *cli.Context) {
 }
 
 func checkoutCmd(c *cli.Context) {
+	if !c.Args().Present() {
+		fmt.Println("Please enter a pull request number")
+		return
+	}
 	number := c.Args()[0]
 	pr, _, err := m.GetPullRequest(number, false)
 	if err != nil {
@@ -89,6 +97,10 @@ func checkoutCmd(c *cli.Context) {
 
 // Approve a pr by adding a LGTM to the comments
 func approveCmd(c *cli.Context) {
+	if !c.Args().Present() {
+		fmt.Println("Please enter a pull request number")
+		return
+	}
 	number := c.Args().First()
 	if _, err := m.AddComment(number, "LGTM"); err != nil {
 		gordon.WriteError("%s", err)
@@ -98,6 +110,10 @@ func approveCmd(c *cli.Context) {
 
 // Show the patch in a PR
 func showCmd(c *cli.Context) {
+	if !c.Args().Present() {
+		fmt.Println("Please enter a pull request number")
+		return
+	}
 	number := c.Args()[0]
 	pr, _, err := m.GetPullRequest(number, false)
 	if err != nil {
@@ -123,6 +139,10 @@ func contributorsCmd(c *cli.Context) {
 
 // Show the reviewers for this pull request
 func reviewersCmd(c *cli.Context) {
+	if !c.Args().Present() {
+		fmt.Println("Please enter a pull request number")
+		return
+	}
 	number := c.Args()[0]
 	var patch io.Reader
 	if number == "-" {

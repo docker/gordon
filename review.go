@@ -51,8 +51,25 @@ func ReviewPatch(src io.Reader, maintainersDirMap *map[string][]*Maintainer) (re
 					targetDir = path.Join(targetDir, items[i])
 				}
 			}
+
 			maintainers := (*maintainersDirMap)[targetDir]
-			reviewers[target] = maintainers
+			if len(maintainers) == 0 {
+				parentPath := ""
+				for _, dir := range strings.Split(targetDir, "/") {
+					if parentPath == "" {
+						parentPath = "."
+					}
+					if len((*maintainersDirMap)[parentPath]) > 0 {
+						reviewers[target] = (*maintainersDirMap)[parentPath]
+					} else {
+						break
+					}
+					parentPath = path.Join(parentPath, dir)
+				}
+			} else {
+				reviewers[target] = maintainers
+			}
+
 		}
 	}
 	return reviewers, nil

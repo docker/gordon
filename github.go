@@ -160,9 +160,9 @@ func createMaintainerManagersDirectoriesMap(pth, cpth, maintainerEmail, userName
 	if cpth == "" {
 		tmpcpth = "."
 	}
-	maintainersCurrentDirectory := append([]*Maintainer{}, (fileMaintainers)...)
-	maintainersDirMap[tmpcpth] = maintainersCurrentDirectory
-
+	if foundMaintainerManagersFile {
+		maintainersDirMap[tmpcpth] = fileMaintainers
+	}
 	// Check if we need to add the directory to the maintainer's  directories mapping tree
 	if (!foundMaintainerManagersFile && !belongsToOthers) || iAmOneOfTheMaintainerManagers {
 		currentPath := []string{tmpcpth}

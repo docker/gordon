@@ -105,7 +105,9 @@ func getMaintainerManagersIds(pth string) (*[]string, []*Maintainer, error) {
 			if m.Username == "" && m.Email == "" {
 				return nil, nil, fmt.Errorf("Incorrect maintainer format: %s", m.Raw)
 			}
-			maintainers = append(maintainers, []*Maintainer{m}...)
+			if m.Username != "" {
+				maintainers = append(maintainers, []*Maintainer{m}...)
+			}
 			if m.Email != "" {
 				email := []string{m.Email}
 				maintainersFileMap = append(maintainersFileMap, email...)

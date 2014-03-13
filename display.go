@@ -63,10 +63,9 @@ func DisplayReviewers(c *cli.Context, reviewers map[string][]*Maintainer) {
 	fmt.Fprintf(w, "\n")
 	for file, fileReviewers := range reviewers {
 		var usernames bytes.Buffer
-		var numReviewers = len(fileReviewers)
-		for i, reviewer := range fileReviewers {
-			usernames.WriteString(reviewer.Username)
-			if i+1 != numReviewers {
+		for _, reviewer := range fileReviewers {
+			if reviewer.Target == "." || reviewer.Target == file {
+				usernames.WriteString(reviewer.Username)
 				usernames.WriteString(", ")
 			}
 		}

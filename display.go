@@ -69,6 +69,7 @@ func DisplayReviewers(c *cli.Context, reviewers map[string][]*Maintainer) {
 				usernames.WriteString(", ")
 			}
 		}
+		usernames.Truncate(usernames.Len() - 2)
 		fmt.Fprintf(w, "%s\t%s\n", file, usernames.String())
 	}
 	if err := w.Flush(); err != nil {

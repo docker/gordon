@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
-	"github.com/crosbymichael/pulls"
+	"github.com/dotcloud/gordon"
 	"strconv"
 	"strings"
 	"time"
@@ -78,11 +78,11 @@ func noMergePullRequestsFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequ
 		// We have to fetch the single pr to get the merge state
 		// it sucks but we have to do it
 		client := gh.NewClient()
-		org, name, err := pulls.GetOriginUrl()
+		org, name, err := gordon.GetOriginUrl()
 		if err != nil {
 			panic(err)
 		}
-		t, err := pulls.NewMaintainerManager(client, org, name)
+		t, err := gordon.NewMaintainerManager(client, org, name)
 		if err != nil {
 			panic(err)
 		}
@@ -120,11 +120,11 @@ func lgtmPullRequestsFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequest
 	for _, pr := range prs {
 		fmt.Printf(".")
 		client := gh.NewClient()
-		org, name, err := pulls.GetOriginUrl()
+		org, name, err := gordon.GetOriginUrl()
 		if err != nil {
 			panic(err)
 		}
-		t, err := pulls.NewMaintainerManager(client, org, name)
+		t, err := gordon.NewMaintainerManager(client, org, name)
 		if err != nil {
 			panic(err)
 		}
@@ -172,11 +172,11 @@ func voteIssuesFilter(issues []*gh.Issue, numVotes int, err error) ([]*gh.Issue,
 	for _, issue := range issues {
 		fmt.Printf(".")
 		client := gh.NewClient()
-		org, name, err := pulls.GetOriginUrl()
+		org, name, err := gordon.GetOriginUrl()
 		if err != nil {
 			panic(err)
 		}
-		t, err := pulls.NewMaintainerManager(client, org, name)
+		t, err := gordon.NewMaintainerManager(client, org, name)
 		if err != nil {
 			panic(err)
 		}

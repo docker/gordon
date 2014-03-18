@@ -1,6 +1,7 @@
-package pulls
+package gordon
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/aybabtme/color/brush"
 	"github.com/codegangsta/cli"
@@ -51,6 +52,26 @@ func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) 
 		fmt.Fprintf(w, "\n")
 	}
 
+	if err := w.Flush(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s", err)
+	}
+}
+
+func DisplayReviewers(c *cli.Context, reviewers map[string][]*Maintainer) {
+	w := newTabwriter()
+	fmt.Fprintf(w, "FILE\tREVIEWERS")
+	fmt.Fprintf(w, "\n")
+	for file, fileReviewers := range reviewers {
+		var usernames bytes.Buffer
+		for _, reviewer := range fileReviewers {
+			if reviewer.Target == "." || reviewer.Target == file {
+				usernames.WriteString(reviewer.Username)
+				usernames.WriteString(", ")
+			}
+		}
+		usernames.Truncate(usernames.Len() - 2)
+		fmt.Fprintf(w, "%s\t%s\n", file, usernames.String())
+	}
 	if err := w.Flush(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s", err)
 	}

@@ -19,7 +19,7 @@ var (
 
 func displayAllPullRequests(c *cli.Context, state string, showAll bool) {
 	filter := filters.GetPullRequestFilter(c)
-	prs, err := filter(m.GetPullRequestsThatICareAbout(showAll, state))
+	prs, err := filter(m.GetPullRequestsThatICareAbout(showAll, state, c.String("sort")))
 	if err != nil {
 		gordon.WriteError("Error getting pull requests %s", err)
 	}

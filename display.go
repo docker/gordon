@@ -1,11 +1,13 @@
 package gordon
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"github.com/aybabtme/color/brush"
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
+	"io"
 	"os"
 	"sort"
 	"strconv"
@@ -215,4 +217,24 @@ func HumanDuration(d time.Duration) string {
 		return fmt.Sprintf("%d hours", hours)
 	}
 	return fmt.Sprintf("%d days", int(d.Hours()/24))
+}
+
+func DisplayPatch(r io.Reader) error {
+	s := bufio.NewScanner(r)
+	for s.Scan() {
+		if err := s.Err(); err != nil {
+			return err
+		}
+		t := s.Text()
+
+		switch t[0] {
+		case '-':
+			fmt.Fprintln(os.Stdout, brush.Red(t))
+		case '+':
+			fmt.Fprintln(os.Stdout, brush.Green(t))
+		default:
+			fmt.Fprintln(os.Stdout, t)
+		}
+	}
+	return nil
 }

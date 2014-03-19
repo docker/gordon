@@ -170,13 +170,10 @@ func reviewersCmd(c *cli.Context) {
 func mainCmd(c *cli.Context) {
 	if !c.Args().Present() {
 		var (
-			state   = "open"
+			state   = c.String("state")
 			showAll = true // default to true so that we get the fast path
 		)
 		switch {
-		case c.Bool("closed"):
-			state = "closed"
-			showAll = false
 		case c.Bool("no-merge"), c.Bool("lgtm"), c.Bool("new"), c.Bool("mine"):
 			showAll = false
 		}

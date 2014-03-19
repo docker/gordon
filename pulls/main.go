@@ -19,7 +19,7 @@ var (
 
 func displayAllPullRequests(c *cli.Context, state string, showAll bool) {
 	filter := filters.GetPullRequestFilter(c)
-	prs, err := filter(m.GetPullRequestsThatICareAbout(showAll, state))
+	prs, err := filter(m.GetPullRequestsThatICareAbout(showAll, state, c.String("sort")))
 	if err != nil {
 		gordon.WriteError("Error getting pull requests %s", err)
 	}
@@ -170,13 +170,10 @@ func reviewersCmd(c *cli.Context) {
 func mainCmd(c *cli.Context) {
 	if !c.Args().Present() {
 		var (
-			state   = "open"
+			state   = c.String("state")
 			showAll = true // default to true so that we get the fast path
 		)
 		switch {
-		case c.Bool("closed"):
-			state = "closed"
-			showAll = false
 		case c.Bool("no-merge"), c.Bool("lgtm"), c.Bool("new"), c.Bool("mine"):
 			showAll = false
 		}

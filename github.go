@@ -242,14 +242,14 @@ func (m *MaintainerManager) GetMaintainersDirMap() *map[string][]*Maintainer {
 }
 
 // Return all the pull requests that I care about
-func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state string) ([]*gh.PullRequest, error) {
+func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state, sortQuery string) ([]*gh.PullRequest, error) {
 
 	if showAll {
-		return m.GetPullRequests(state)
+		return m.GetPullRequests(state, sortQuery)
 	}
 
 	filteredPrs := []*gh.PullRequest{}
-	prs, err := m.GetPullRequests(state)
+	prs, err := m.GetPullRequests(state, sortQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -274,10 +274,10 @@ func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state st
 }
 
 // Return all pull requests
-func (m *MaintainerManager) GetPullRequests(state string) ([]*gh.PullRequest, error) {
+func (m *MaintainerManager) GetPullRequests(state, sort string) ([]*gh.PullRequest, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{
-		"sort":      "updated",
+		"sort":      sort,
 		"direction": "asc",
 		"state":     state,
 		"per_page":  "100",

@@ -12,9 +12,10 @@ func loadCommands(app *cli.App) {
 	filters := []cli.Flag{
 		cli.BoolFlag{"no-merge", "display only prs that cannot be merged"},
 		cli.BoolFlag{"lgtm", "display the number of LGTM"},
-		cli.BoolFlag{"closed", "display closed prs"},
+		cli.StringFlag{"state", "open", "display prs based on their state"},
 		cli.BoolFlag{"new", "display prs opened in the last 24 hours"},
 		cli.BoolFlag{"mine", "display only PRs I care about based on the MAINTAINERS files"},
+		cli.StringFlag{"sort", "updated", "sort the prs by (created, updated, popularity, long-running)"},
 	}
 	// Options modify how to display prs
 	options := []cli.Flag{

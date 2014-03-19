@@ -173,13 +173,12 @@ func mainCmd(c *cli.Context) {
 			state   = "open"
 			showAll = true // default to true so that we get the fast path
 		)
-		if c.Bool("closed") {
+		switch {
+		case c.Bool("closed"):
 			state = "closed"
 			showAll = false
-		} else {
-			if c.Bool("no-merge") || c.Bool("lgtm") || c.Bool("new") {
-				showAll = false
-			}
+		case c.Bool("no-merge"), c.Bool("lgtm"), c.Bool("new"), c.Bool("mine"):
+			showAll = false
 		}
 		displayAllPullRequests(c, state, showAll)
 		return

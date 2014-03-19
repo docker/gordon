@@ -14,7 +14,7 @@ func loadCommands(app *cli.App) {
 		cli.BoolFlag{"lgtm", "display the number of LGTM"},
 		cli.BoolFlag{"closed", "display closed prs"},
 		cli.BoolFlag{"new", "display prs opened in the last 24 hours"},
-		cli.BoolFlag{"all", "display all pull requests"},
+		cli.BoolFlag{"mine", "display only PRs I care about based on the MAINTAINERS files"},
 	}
 	// Options modify how to display prs
 	options := []cli.Flag{

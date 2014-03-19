@@ -169,13 +169,16 @@ func reviewersCmd(c *cli.Context) {
 // working with prs
 func mainCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		state := "open"
-		showAll := false
-		if c.Bool("closed") {
+		var (
+			state   = "open"
+			showAll = true // default to true so that we get the fast path
+		)
+		switch {
+		case c.Bool("closed"):
 			state = "closed"
-		}
-		if c.Bool("all") {
-			showAll = true
+			showAll = false
+		case c.Bool("no-merge"), c.Bool("lgtm"), c.Bool("new"), c.Bool("mine"):
+			showAll = false
 		}
 		displayAllPullRequests(c, state, showAll)
 		return

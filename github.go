@@ -243,16 +243,16 @@ func (m *MaintainerManager) GetMaintainersDirMap() *map[string][]*Maintainer {
 
 // Return all the pull requests that I care about
 func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state, sortQuery string) ([]*gh.PullRequest, error) {
-
-	if showAll {
-		return m.GetPullRequests(state, sortQuery)
-	}
-
-	filteredPrs := []*gh.PullRequest{}
 	prs, err := m.GetPullRequests(state, sortQuery)
 	if err != nil {
 		return nil, err
 	}
+
+	if showAll {
+		return prs, nil
+	}
+
+	filteredPrs := []*gh.PullRequest{}
 	for _, p := range prs {
 		prfs, err := m.GetPullRequestFiles(strconv.Itoa(p.Number))
 		if err != nil {
@@ -260,15 +260,14 @@ func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state, s
 		}
 		for _, prf := range prfs {
 			dirPath := filepath.Dir(prf.FileName)
-			i := sort.SearchStrings((*m.maintainerDirMap).paths, dirPath)
-			if i < len(m.maintainerDirMap.paths) && (*m.maintainerDirMap).paths[i] == dirPath {
-				pr := []*gh.PullRequest{p}
-				filteredPrs = append(filteredPrs, pr...)
+			paths := m.maintainerDirMap.paths
+			i := sort.SearchStrings(paths, dirPath)
+			if i < len(paths) && paths[i] == dirPath {
+				filteredPrs = append(filteredPrs, p)
 				break
 			}
 		}
 		fmt.Printf(".")
-
 	}
 	return filteredPrs, nil
 }

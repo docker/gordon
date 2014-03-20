@@ -48,6 +48,10 @@ func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) 
 			lgtm := strconv.Itoa(p.ReviewComments)
 			if p.ReviewComments >= 2 {
 				lgtm = brush.Green(lgtm).String()
+			} else if p.ReviewComments == 0 {
+				lgtm = brush.DarkRed(lgtm).String()
+			} else {
+				lgtm = brush.DarkYellow(lgtm).String()
 			}
 			fmt.Fprintf(w, "\t%s", lgtm)
 		}

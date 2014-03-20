@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // Top level type that manages a repository
@@ -241,6 +242,45 @@ func (m *MaintainerManager) GetMaintainersDirMap() *map[string][]*Maintainer {
 	return m.maintainersDirMap
 }
 
+func (m *MaintainerManager) FilterPullResquests(prs []*gh.PullRequest) []*gh.PullRequest {
+	var (
+		pr          = make(chan *gh.PullRequest)
+		wg          = sync.WaitGroup{}
+		filteredPrs = []*gh.PullRequest{}
+	)
+	wg.Add(len(prs))
+	for _, p := range prs {
+		go func(p *gh.PullRequest) error {
+			defer wg.Done()
+			prfs, err := m.GetPullRequestFiles(strconv.Itoa(p.Number))
+			if err != nil {
+				return err
+			}
+			for _, prf := range prfs {
+				dirPath := filepath.Dir(prf.FileName)
+				i := sort.SearchStrings((*m.maintainerDirMap).paths, dirPath)
+				if i < len(m.maintainerDirMap.paths) && (*m.maintainerDirMap).paths[i] == dirPath {
+					pr <- p
+					break
+				}
+			}
+			fmt.Printf(".")
+
+			return nil
+		}(p)
+	}
+
+	go func() {
+		for p := range pr {
+			filteredPrs = append(filteredPrs, []*gh.PullRequest{p}...)
+		}
+	}()
+
+	wg.Wait()
+
+	return filteredPrs
+}
+
 // Return all the pull requests that I care about
 func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state, sortQuery string) ([]*gh.PullRequest, error) {
 
@@ -248,29 +288,11 @@ func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state, s
 		return m.GetPullRequests(state, sortQuery)
 	}
 
-	filteredPrs := []*gh.PullRequest{}
 	prs, err := m.GetPullRequests(state, sortQuery)
 	if err != nil {
 		return nil, err
 	}
-	for _, p := range prs {
-		prfs, err := m.GetPullRequestFiles(strconv.Itoa(p.Number))
-		if err != nil {
-			return nil, err
-		}
-		for _, prf := range prfs {
-			dirPath := filepath.Dir(prf.FileName)
-			i := sort.SearchStrings((*m.maintainerDirMap).paths, dirPath)
-			if i < len(m.maintainerDirMap.paths) && (*m.maintainerDirMap).paths[i] == dirPath {
-				pr := []*gh.PullRequest{p}
-				filteredPrs = append(filteredPrs, pr...)
-				break
-			}
-		}
-		fmt.Printf(".")
-
-	}
-	return filteredPrs, nil
+	return m.FilterPullResquests(prs), nil
 }
 
 // Return all pull requests

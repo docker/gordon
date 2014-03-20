@@ -123,7 +123,9 @@ func showCmd(c *cli.Context) {
 	if err != nil {
 		gordon.WriteError("%s", err)
 	}
-	if _, err := io.Copy(os.Stdout, patch.Body); err != nil {
+	defer patch.Body.Close()
+
+	if err := gordon.DisplayPatch(patch.Body); err != nil {
 		gordon.WriteError("%s", err)
 	}
 }
@@ -157,6 +159,7 @@ func reviewersCmd(c *cli.Context) {
 			gordon.WriteError("%s", err)
 		}
 		patch = resp.Body
+		defer resp.Body.Close()
 	}
 	reviewers, err := gordon.ReviewPatch(patch, m.GetMaintainersDirMap())
 	if err != nil {

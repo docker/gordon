@@ -243,7 +243,7 @@ func (m *MaintainerManager) GetMaintainersDirMap() *map[string][]*Maintainer {
 	return m.maintainersDirMap
 }
 
-func (m *MaintainerManager) worker(i int, controller chan<- int, prepr <-chan *gh.PullRequest, pospr chan<- *gh.PullRequest, wg *sync.WaitGroup) {
+func (m *MaintainerManager) worker(controller chan<- int, prepr <-chan *gh.PullRequest, pospr chan<- *gh.PullRequest, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for p := range prepr {
 		prfs, err := m.GetPullRequestFiles(strconv.Itoa(p.Number))
@@ -260,7 +260,7 @@ func (m *MaintainerManager) worker(i int, controller chan<- int, prepr <-chan *g
 		}
 		fmt.Printf(".")
 	}
-	controller <- i
+	controller <- 1
 }
 
 func (m *MaintainerManager) filterPullResquests(prs []*gh.PullRequest) []*gh.PullRequest {
@@ -284,8 +284,8 @@ func (m *MaintainerManager) filterPullResquests(prs []*gh.PullRequest) []*gh.Pul
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		for _ = range controller {
-			sum += 1
+		for i := range controller {
+			sum += i
 			if sum == NumWorkers {
 				close(pospr)
 				close(controller)
@@ -295,7 +295,7 @@ func (m *MaintainerManager) filterPullResquests(prs []*gh.PullRequest) []*gh.Pul
 
 	for i := 0; i < NumWorkers; i++ {
 		wg.Add(1)
-		go m.worker(i, controller, prepr, pospr, wg)
+		go m.worker(controller, prepr, pospr, wg)
 	}
 
 	for _, p := range prs {

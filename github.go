@@ -34,8 +34,10 @@ type Config struct {
 	UserName string
 }
 
-const MaintainerManagersFileName = "MAINTAINERS"
-const NumWorkers = 10
+const (
+	MaintainerManagersFileName = "MAINTAINERS"
+	NumWorkers                 = 10
+)
 
 var (
 	maintainerDirMap  = MaintainerManagerDirectoriesMap{}
@@ -243,8 +245,9 @@ func (m *MaintainerManager) GetMaintainersDirMap() *map[string][]*Maintainer {
 	return m.maintainersDirMap
 }
 
-func (m *MaintainerManager) worker(controller chan<- int, prepr <-chan *gh.PullRequest, pospr chan<- *gh.PullRequest, wg *sync.WaitGroup) {
+func (m *MaintainerManager) worker(prepr <-chan *gh.PullRequest, pospr chan<- *gh.PullRequest, wg *sync.WaitGroup) {
 	defer wg.Done()
+
 	for p := range prepr {
 		prfs, err := m.GetPullRequestFiles(strconv.Itoa(p.Number))
 		if err != nil {
@@ -260,50 +263,44 @@ func (m *MaintainerManager) worker(controller chan<- int, prepr <-chan *gh.PullR
 		}
 		fmt.Printf(".")
 	}
-	controller <- 1
 }
 
 func (m *MaintainerManager) filterPullResquests(prs []*gh.PullRequest) []*gh.PullRequest {
 	var (
-		prepr       = make(chan *gh.PullRequest, NumWorkers)
-		pospr       = make(chan *gh.PullRequest, NumWorkers)
-		controller  = make(chan int, NumWorkers)
-		wg          = &sync.WaitGroup{}
-		filteredPrs = []*gh.PullRequest{}
-		sum         int
+		producer      = make(chan *gh.PullRequest, NumWorkers)
+		consumer      = make(chan *gh.PullRequest, NumWorkers)
+		wg            = &sync.WaitGroup{}
+		consumerGroup = &sync.WaitGroup{}
+		filteredPrs   = []*gh.PullRequest{}
 	)
 
-	wg.Add(1)
+	// take the finished results and put them into the list
+	consumerGroup.Add(1)
 	go func() {
-		defer wg.Done()
-		for p := range pospr {
-			filteredPrs = append(filteredPrs, []*gh.PullRequest{p}...)
-		}
-	}()
+		defer consumerGroup.Done()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for i := range controller {
-			sum += i
-			if sum == NumWorkers {
-				close(pospr)
-				close(controller)
-			}
+		for p := range consumer {
+			filteredPrs = append(filteredPrs, []*gh.PullRequest{p}...)
 		}
 	}()
 
 	for i := 0; i < NumWorkers; i++ {
 		wg.Add(1)
-		go m.worker(controller, prepr, pospr, wg)
+		go m.worker(producer, consumer, wg)
 	}
 
+	// add all jobs
 	for _, p := range prs {
-		prepr <- p
+		producer <- p
 	}
-	close(prepr)
+	// we are done sending jobs so close the channel
+	close(producer)
 
 	wg.Wait()
+
+	close(consumer)
+	// wait for the consumer to finish adding all the results to the list
+	consumerGroup.Wait()
 
 	return filteredPrs
 }

@@ -66,7 +66,7 @@ func loadCommands(app *cli.App) {
 			Action: approveCmd,
 		},
 		{
-			Name:   "show",
+			Name:   "diff",
 			Usage:  "Print the patch submitted by a pull request",
 			Action: showCmd,
 		},

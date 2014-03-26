@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // Top level type that manages a repository
@@ -33,7 +34,10 @@ type Config struct {
 	UserName string
 }
 
-const MaintainerManagersFileName = "MAINTAINERS"
+const (
+	MaintainerManagersFileName = "MAINTAINERS"
+	NumWorkers                 = 10
+)
 
 var (
 	maintainerDirMap  = MaintainerManagerDirectoriesMap{}
@@ -241,35 +245,78 @@ func (m *MaintainerManager) GetMaintainersDirMap() *map[string][]*Maintainer {
 	return m.maintainersDirMap
 }
 
-// Return all the pull requests that I care about
-func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state, sortQuery string) ([]*gh.PullRequest, error) {
-	prs, err := m.GetPullRequests(state, sortQuery)
-	if err != nil {
-		return nil, err
-	}
+func (m *MaintainerManager) worker(prepr <-chan *gh.PullRequest, pospr chan<- *gh.PullRequest, wg *sync.WaitGroup) {
+	defer wg.Done()
 
-	if showAll {
-		return prs, nil
-	}
-
-	filteredPrs := []*gh.PullRequest{}
-	for _, p := range prs {
+	for p := range prepr {
 		prfs, err := m.GetPullRequestFiles(strconv.Itoa(p.Number))
 		if err != nil {
-			return nil, err
+			return
 		}
 		for _, prf := range prfs {
 			dirPath := filepath.Dir(prf.FileName)
-			paths := m.maintainerDirMap.paths
-			i := sort.SearchStrings(paths, dirPath)
-			if i < len(paths) && paths[i] == dirPath {
-				filteredPrs = append(filteredPrs, p)
+			i := sort.SearchStrings((*m.maintainerDirMap).paths, dirPath)
+			if i < len(m.maintainerDirMap.paths) && (*m.maintainerDirMap).paths[i] == dirPath {
+				pospr <- p
 				break
 			}
 		}
 		fmt.Printf(".")
 	}
-	return filteredPrs, nil
+}
+
+func (m *MaintainerManager) filterPullResquests(prs []*gh.PullRequest) []*gh.PullRequest {
+	var (
+		producer      = make(chan *gh.PullRequest, NumWorkers)
+		consumer      = make(chan *gh.PullRequest, NumWorkers)
+		wg            = &sync.WaitGroup{}
+		consumerGroup = &sync.WaitGroup{}
+		filteredPrs   = []*gh.PullRequest{}
+	)
+
+	// take the finished results and put them into the list
+	consumerGroup.Add(1)
+	go func() {
+		defer consumerGroup.Done()
+
+		for p := range consumer {
+			filteredPrs = append(filteredPrs, []*gh.PullRequest{p}...)
+		}
+	}()
+
+	for i := 0; i < NumWorkers; i++ {
+		wg.Add(1)
+		go m.worker(producer, consumer, wg)
+	}
+
+	// add all jobs
+	for _, p := range prs {
+		producer <- p
+	}
+	// we are done sending jobs so close the channel
+	close(producer)
+
+	wg.Wait()
+
+	close(consumer)
+	// wait for the consumer to finish adding all the results to the list
+	consumerGroup.Wait()
+
+	return filteredPrs
+}
+
+// Return all the pull requests that I care about
+func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state, sortQuery string) ([]*gh.PullRequest, error) {
+
+	if showAll {
+		return m.GetPullRequests(state, sortQuery)
+	}
+
+	prs, err := m.GetPullRequests(state, sortQuery)
+	if err != nil {
+		return nil, err
+	}
+	return m.filterPullResquests(prs), nil
 }
 
 // Return all pull requests

@@ -35,6 +35,7 @@ type Config struct {
 }
 
 const MaintainerManagersFileName = "MAINTAINERS"
+const NumWorkers = 10
 
 var (
 	maintainerDirMap  = MaintainerManagerDirectoriesMap{}
@@ -242,39 +243,65 @@ func (m *MaintainerManager) GetMaintainersDirMap() *map[string][]*Maintainer {
 	return m.maintainersDirMap
 }
 
-func (m *MaintainerManager) FilterPullResquests(prs []*gh.PullRequest) []*gh.PullRequest {
-	var (
-		pr          = make(chan *gh.PullRequest)
-		wg          = sync.WaitGroup{}
-		filteredPrs = []*gh.PullRequest{}
-	)
-	wg.Add(len(prs))
-	for _, p := range prs {
-		go func(p *gh.PullRequest) error {
-			defer wg.Done()
-			prfs, err := m.GetPullRequestFiles(strconv.Itoa(p.Number))
-			if err != nil {
-				return err
+func (m *MaintainerManager) worker(i int, controller chan<- int, prepr <-chan *gh.PullRequest, pospr chan<- *gh.PullRequest, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for p := range prepr {
+		prfs, err := m.GetPullRequestFiles(strconv.Itoa(p.Number))
+		if err != nil {
+			return
+		}
+		for _, prf := range prfs {
+			dirPath := filepath.Dir(prf.FileName)
+			i := sort.SearchStrings((*m.maintainerDirMap).paths, dirPath)
+			if i < len(m.maintainerDirMap.paths) && (*m.maintainerDirMap).paths[i] == dirPath {
+				pospr <- p
+				break
 			}
-			for _, prf := range prfs {
-				dirPath := filepath.Dir(prf.FileName)
-				i := sort.SearchStrings((*m.maintainerDirMap).paths, dirPath)
-				if i < len(m.maintainerDirMap.paths) && (*m.maintainerDirMap).paths[i] == dirPath {
-					pr <- p
-					break
-				}
-			}
-			fmt.Printf(".")
-
-			return nil
-		}(p)
+		}
+		fmt.Printf(".")
 	}
+	controller <- i
+}
 
+func (m *MaintainerManager) filterPullResquests(prs []*gh.PullRequest) []*gh.PullRequest {
+	var (
+		prepr       = make(chan *gh.PullRequest, NumWorkers)
+		pospr       = make(chan *gh.PullRequest, NumWorkers)
+		controller  = make(chan int, NumWorkers)
+		wg          = &sync.WaitGroup{}
+		filteredPrs = []*gh.PullRequest{}
+		sum         int
+	)
+
+	wg.Add(1)
 	go func() {
-		for p := range pr {
+		defer wg.Done()
+		for p := range pospr {
 			filteredPrs = append(filteredPrs, []*gh.PullRequest{p}...)
 		}
 	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for _ = range controller {
+			sum += 1
+			if sum == NumWorkers {
+				close(pospr)
+				close(controller)
+			}
+		}
+	}()
+
+	for i := 0; i < NumWorkers; i++ {
+		wg.Add(1)
+		go m.worker(i, controller, prepr, pospr, wg)
+	}
+
+	for _, p := range prs {
+		prepr <- p
+	}
+	close(prepr)
 
 	wg.Wait()
 
@@ -292,7 +319,7 @@ func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state, s
 	if err != nil {
 		return nil, err
 	}
-	return m.FilterPullResquests(prs), nil
+	return m.filterPullResquests(prs), nil
 }
 
 // Return all pull requests

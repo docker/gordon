@@ -265,7 +265,7 @@ func (m *MaintainerManager) worker(prepr <-chan *gh.PullRequest, pospr chan<- *g
 	}
 }
 
-func (m *MaintainerManager) filterPullResquests(prs []*gh.PullRequest) []*gh.PullRequest {
+func (m *MaintainerManager) filterPullRequests(prs []*gh.PullRequest) []*gh.PullRequest {
 	var (
 		producer      = make(chan *gh.PullRequest, NumWorkers)
 		consumer      = make(chan *gh.PullRequest, NumWorkers)
@@ -316,7 +316,7 @@ func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state, s
 		return prs, nil
 	}
 
-	return m.filterPullResquests(prs), nil
+	return m.filterPullRequests(prs), nil
 }
 
 // Return all pull requests

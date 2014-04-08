@@ -307,15 +307,15 @@ func (m *MaintainerManager) filterPullResquests(prs []*gh.PullRequest) []*gh.Pul
 
 // Return all the pull requests that I care about
 func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state, sortQuery string) ([]*gh.PullRequest, error) {
-
-	if showAll {
-		return m.GetPullRequests(state, sortQuery)
-	}
-
 	prs, err := m.GetPullRequests(state, sortQuery)
 	if err != nil {
 		return nil, err
 	}
+
+	if showAll {
+		return prs, nil
+	}
+
 	return m.filterPullResquests(prs), nil
 }
 

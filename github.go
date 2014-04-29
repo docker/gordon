@@ -104,8 +104,9 @@ func getMaintainerManagersIds(pth string) (*[]string, []*Maintainer, error) {
 	scanner := bufio.NewScanner(file)
 	var maintainers = []*Maintainer{}
 	for scanner.Scan() {
-		if scanner.Text() != "" {
-			m := parseMaintainer(scanner.Text())
+
+		if t := scanner.Text(); t != "" && t[0] != '#' {
+			m := parseMaintainer(t)
 			if m.Username == "" && m.Email == "" {
 				return nil, nil, fmt.Errorf("Incorrect maintainer format: %s", m.Raw)
 			}

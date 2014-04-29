@@ -22,7 +22,7 @@ func WriteError(format string, err error) {
 func GetOriginUrl() (string, string, error) {
 	remotes, err := getRemotes()
 	if err != nil {
-		return "", "", nil
+		return "", "", err
 	}
 	for _, r := range remotes {
 		if r.Name == "origin" {

@@ -245,7 +245,8 @@ func main() {
 
 	org, name, err := gordon.GetOriginUrl()
 	if err != nil {
-		gordon.WriteError("%s", err)
+		fmt.Fprintf(os.Stderr, "The current directory is not a valid git repository.\n")
+		os.Exit(1)
 	}
 	t, err := gordon.NewMaintainerManager(client, org, name)
 	if err != nil {

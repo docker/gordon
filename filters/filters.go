@@ -119,19 +119,21 @@ func lgtmPullRequestsFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequest
 
 	for _, pr := range prs {
 		fmt.Printf(".")
+
 		client := gh.NewClient()
 		org, name, err := gordon.GetOriginUrl()
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		t, err := gordon.NewMaintainerManager(client, org, name)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		comments, err := t.GetComments(strconv.Itoa(pr.Number))
 		if err != nil {
 			return nil, err
 		}
+
 		pr.ReviewComments = 0
 		maintainersOccurrence := map[string]bool{}
 		for _, comment := range comments {

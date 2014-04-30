@@ -67,17 +67,15 @@ func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) 
 	}
 }
 
-func DisplayReviewers(c *cli.Context, reviewers map[string][]*Maintainer) {
+func DisplayReviewers(c *cli.Context, reviewers map[string][]string) {
 	w := newTabwriter()
 	fmt.Fprintf(w, "FILE\tREVIEWERS")
 	fmt.Fprintf(w, "\n")
 	for file, fileReviewers := range reviewers {
 		var usernames bytes.Buffer
 		for _, reviewer := range fileReviewers {
-			if reviewer.Target == "." || reviewer.Target == file {
-				usernames.WriteString(reviewer.Username)
-				usernames.WriteString(", ")
-			}
+			usernames.WriteString(reviewer)
+			usernames.WriteString(", ")
 		}
 		usernames.Truncate(usernames.Len() - 2)
 		fmt.Fprintf(w, "%s\t%s\n", file, usernames.String())

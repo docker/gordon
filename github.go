@@ -1,15 +1,11 @@
 package gordon
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	gh "github.com/crosbymichael/octokat"
-	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,16 +13,11 @@ import (
 
 // Top level type that manages a repository
 type MaintainerManager struct {
-	repo              gh.Repo
-	client            *gh.Client
-	email             string
-	maintainerDirMap  *MaintainerManagerDirectoriesMap
-	maintainersIds    *[]string
-	maintainersDirMap *map[string][]*Maintainer
-}
-
-type MaintainerManagerDirectoriesMap struct {
-	paths []string
+	repo       gh.Repo
+	client     *gh.Client
+	email      string
+	username   string
+	originPath string
 }
 
 type Config struct {
@@ -34,18 +25,9 @@ type Config struct {
 	UserName string
 }
 
-const (
-	MaintainerManagersFileName = "MAINTAINERS"
-	NumWorkers                 = 10
-)
-
 var (
-	maintainerDirMap  = MaintainerManagerDirectoriesMap{}
-	maintainersIds    = []string{}
-	maintainersDirMap = map[string][]*Maintainer{}
-	belongsToOthers   = false
-	fileMaintainers   = []*Maintainer{}
-	configPath        = path.Join(os.Getenv("HOME"), ".maintainercfg")
+	belongsToOthers = false
+	configPath      = path.Join(os.Getenv("HOME"), ".maintainercfg")
 )
 
 func LoadConfig() (*Config, error) {
@@ -98,97 +80,6 @@ func getRepoPath(pth, org string) string {
 	return repoPath
 }
 
-func getMaintainerManagersIds(pth string) (*[]string, []*Maintainer, error) {
-	maintainersFileMap := []string{}
-	file, _ := os.Open(pth)
-	scanner := bufio.NewScanner(file)
-	var maintainers = []*Maintainer{}
-	for scanner.Scan() {
-
-		if t := scanner.Text(); t != "" && t[0] != '#' {
-			m := parseMaintainer(t)
-			if m.Username == "" && m.Email == "" {
-				return nil, nil, fmt.Errorf("Incorrect maintainer format: %s", m.Raw)
-			}
-			if m.Username != "" {
-				maintainers = append(maintainers, []*Maintainer{m}...)
-			}
-			if m.Email != "" {
-				email := []string{m.Email}
-				maintainersFileMap = append(maintainersFileMap, email...)
-			}
-			if m.Username != "" {
-				userName := []string{m.Username}
-				maintainersFileMap = append(maintainersFileMap, userName...)
-			}
-		}
-	}
-	sort.Strings(maintainersFileMap)
-
-	return &maintainersFileMap, maintainers, nil
-}
-
-func createMaintainerManagersDirectoriesMap(pth, cpth, maintainerEmail, userName string) error {
-	names, err := ioutil.ReadDir(pth)
-	if err != nil {
-		return err
-	}
-	// Look for the MaintainerManager File
-	var (
-		foundMaintainerManagersFile      = false
-		iAmOneOfTheMaintainerManagers    = false
-		belongsToOtherMaintainerManagers = false
-	)
-
-	for _, name := range names {
-		if strings.EqualFold(name.Name(), MaintainerManagersFileName) {
-			foundMaintainerManagersFile = true
-			var ids = &[]string{}
-			ids, fileMaintainers, err = getMaintainerManagersIds(path.Join(pth, name.Name()))
-			maintainersIds = append(maintainersIds, (*ids)...)
-			sort.Strings(maintainersIds)
-			if err != nil {
-				return err
-			}
-			i := sort.SearchStrings(*ids, maintainerEmail)
-			if i < len(*ids) && (*ids)[i] == maintainerEmail {
-				iAmOneOfTheMaintainerManagers = true
-			} else {
-				i := sort.SearchStrings(*ids, userName)
-				if i < len(*ids) && (*ids)[i] == userName {
-					iAmOneOfTheMaintainerManagers = true
-				}
-			}
-		}
-	}
-
-	// Save the maintainers list related to the current directory
-	tmpcpth := cpth
-	if cpth == "" {
-		tmpcpth = "."
-	}
-	if foundMaintainerManagersFile {
-		maintainersDirMap[tmpcpth] = fileMaintainers
-	}
-	// Check if we need to add the directory to the maintainer's  directories mapping tree
-	if (!foundMaintainerManagersFile && !belongsToOthers) || iAmOneOfTheMaintainerManagers {
-		currentPath := []string{tmpcpth}
-		maintainerDirMap.paths = append(maintainerDirMap.paths, currentPath...)
-	} else if foundMaintainerManagersFile || belongsToOthers {
-		belongsToOtherMaintainerManagers = true
-	}
-	for _, name := range names {
-		if name.IsDir() && name.Name()[0] != '.' {
-			tmpcpth := path.Join(cpth, name.Name())
-			newPath := path.Join(pth, name.Name())
-			belongsToOthers = belongsToOtherMaintainerManagers
-			createMaintainerManagersDirectoriesMap(newPath, tmpcpth, maintainerEmail, userName)
-		}
-	}
-
-	return err
-}
-
 func getOriginPath(repo string) (string, error) {
 	currentPath, err := os.Getwd()
 	if err != nil {
@@ -206,7 +97,6 @@ func getOriginPath(repo string) (string, error) {
 }
 
 func NewMaintainerManager(client *gh.Client, org, repo string) (*MaintainerManager, error) {
-
 	config, err := LoadConfig()
 	if err == nil {
 		client.WithToken(config.Token)
@@ -219,17 +109,12 @@ func NewMaintainerManager(client *gh.Client, org, repo string) (*MaintainerManag
 	if err != nil {
 		return nil, err
 	}
-	err = createMaintainerManagersDirectoriesMap(originPath, "", email, config.UserName)
-	if err != nil {
-		return nil, err
-	}
 	return &MaintainerManager{
-		repo:              gh.Repo{Name: repo, UserName: org},
-		client:            client,
-		maintainerDirMap:  &maintainerDirMap,
-		email:             email,
-		maintainersIds:    &maintainersIds,
-		maintainersDirMap: &maintainersDirMap,
+		repo:       gh.Repo{Name: repo, UserName: org},
+		client:     client,
+		email:      email,
+		originPath: originPath,
+		username:   config.UserName,
 	}, nil
 }
 
@@ -237,31 +122,19 @@ func (m *MaintainerManager) Repository() (*gh.Repository, error) {
 	return m.client.Repository(m.repo, nil)
 }
 
-func (m *MaintainerManager) IsMaintainer(userName string) bool {
-	i := sort.SearchStrings(*(m.maintainersIds), userName)
-	return (i < len(*(m.maintainersIds)) && (*(m.maintainersIds))[i] == userName)
-}
-
-func (m *MaintainerManager) GetMaintainersDirMap() *map[string][]*Maintainer {
-	return m.maintainersDirMap
+func (m *MaintainerManager) IsMaintainer(username string) bool {
+	return true
 }
 
 func (m *MaintainerManager) worker(prepr <-chan *gh.PullRequest, pospr chan<- *gh.PullRequest, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for p := range prepr {
-		prfs, err := m.GetPullRequestFiles(strconv.Itoa(p.Number))
+		pr, _, err := m.GetPullRequest(strconv.Itoa(p.Number), false)
 		if err != nil {
 			return
 		}
-		for _, prf := range prfs {
-			dirPath := filepath.Dir(prf.FileName)
-			i := sort.SearchStrings((*m.maintainerDirMap).paths, dirPath)
-			if i < len(m.maintainerDirMap.paths) && (*m.maintainerDirMap).paths[i] == dirPath {
-				pospr <- p
-				break
-			}
-		}
+		pospr <- pr
 		fmt.Printf(".")
 	}
 }

@@ -169,7 +169,11 @@ func reviewersCmd(c *cli.Context) {
 		defer resp.Body.Close()
 	}
 
-	maintainers, err := gordon.GetMaintainersFromRepo(".")
+	toplevel, err := gordon.GetTopLevelGitRepo()
+	if err != nil {
+		gordon.Fatalf("%s", err)
+	}
+	maintainers, err := gordon.GetMaintainersFromRepo(toplevel)
 	if err != nil {
 		gordon.Fatalf("%s\n", err)
 	}

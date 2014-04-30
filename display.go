@@ -33,7 +33,7 @@ func truncate(s string) string {
 
 func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) {
 	w := newTabwriter()
-	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tASSIGNEE\tTITLE")
+	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tCONTRIBUTOR\tASSIGNEE\tTITLE")
 	if c.Bool("lgtm") {
 		fmt.Fprintf(w, "\tLGTM")
 	}
@@ -46,7 +46,7 @@ func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) 
 		if p.Assignee != nil {
 			assignee = p.Assignee.Login
 		}
-		fmt.Fprintf(w, "%d\t%s\t%s\t%s", p.Number, HumanDuration(time.Since(p.UpdatedAt)), assignee, p.Title)
+		fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s", p.Number, HumanDuration(time.Since(p.UpdatedAt)), p.User.Login, assignee, p.Title)
 		if c.Bool("lgtm") {
 			lgtm := strconv.Itoa(p.ReviewComments)
 			if p.ReviewComments >= 2 {

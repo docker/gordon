@@ -24,7 +24,7 @@ func displayAllPullRequests(c *cli.Context, state string, showAll bool) {
 	filter := filters.GetPullRequestFilter(c)
 	prs, err := filter(m.GetPullRequestsThatICareAbout(showAll, state, c.String("sort")))
 	if err != nil {
-		gordon.WriteError("Error getting pull requests %s", err)
+		gordon.Fatalf("Error getting pull requests %s", err)
 	}
 
 	fmt.Printf("%c[2K\r", 27)
@@ -45,7 +45,7 @@ func displayAllPullRequestFiles(c *cli.Context, number string) {
 func alruCmd(c *cli.Context) {
 	lru, err := m.GetFirstPullRequest("open", "updated")
 	if err != nil {
-		gordon.WriteError("Error getting pull requests: %s", err)
+		gordon.Fatalf("Error getting pull requests: %s", err)
 	}
 	fmt.Printf("%v (#%d)\n", gordon.HumanDuration(time.Since(lru.UpdatedAt)), lru.Number)
 }
@@ -53,7 +53,7 @@ func alruCmd(c *cli.Context) {
 func addComment(number, comment string) {
 	cmt, err := m.AddComment(number, comment)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	gordon.DisplayCommentAdded(cmt)
 }
@@ -61,49 +61,49 @@ func addComment(number, comment string) {
 func repositoryInfoCmd(c *cli.Context) {
 	r, err := m.Repository()
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	fmt.Printf("Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
 }
 
 func mergeCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		gordon.WriteError("usage: merge ID")
+		gordon.Fatalf("usage: merge ID")
 	}
 	number := c.Args()[0]
 	merge, err := m.MergePullRequest(number, c.String("m"), c.Bool("force"))
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	if merge.Merged {
 		fmt.Printf("%s\n", brush.Green(merge.Message))
 	} else {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 }
 
 func checkoutCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		gordon.WriteError("usage: checkout ID")
+		gordon.Fatalf("usage: checkout ID")
 	}
 	number := c.Args()[0]
 	pr, _, err := m.GetPullRequest(number, false)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	if err := m.Checkout(pr); err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 }
 
 // Approve a pr by adding a LGTM to the comments
 func approveCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		gordon.WriteError("usage: approve ID")
+		gordon.Fatalf("usage: approve ID")
 	}
 	number := c.Args().First()
 	if _, err := m.AddComment(number, "LGTM"); err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	fmt.Printf("Pull request %s approved\n", brush.Green(number))
 }
@@ -111,21 +111,21 @@ func approveCmd(c *cli.Context) {
 // Show the patch in a PR
 func showCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		gordon.WriteError("usage: show ID")
+		gordon.Fatalf("usage: show ID")
 	}
 	number := c.Args()[0]
 	pr, _, err := m.GetPullRequest(number, false)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	patch, err := http.Get(pr.DiffURL)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	defer patch.Body.Close()
 
 	if err := gordon.DisplayPatch(patch.Body); err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 }
 
@@ -133,7 +133,7 @@ func showCmd(c *cli.Context) {
 func contributorsCmd(c *cli.Context) {
 	contributors, err := m.GetContributors()
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	gordon.DisplayContributors(c, contributors)
 }
@@ -141,7 +141,7 @@ func contributorsCmd(c *cli.Context) {
 // Show the reviewers for this pull request
 func reviewersCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		gordon.WriteError("usage: reviewers ID")
+		gordon.Fatalf("usage: reviewers ID")
 	}
 
 	var (
@@ -154,12 +154,12 @@ func reviewersCmd(c *cli.Context) {
 	} else {
 		pr, _, err := m.GetPullRequest(number, false)
 		if err != nil {
-			gordon.WriteError("%s", err)
+			gordon.Fatalf("%s", err)
 		}
 
 		resp, err := http.Get(pr.DiffURL)
 		if err != nil {
-			gordon.WriteError("%s", err)
+			gordon.Fatalf("%s", err)
 		}
 		patch = resp.Body
 		defer resp.Body.Close()
@@ -167,12 +167,12 @@ func reviewersCmd(c *cli.Context) {
 
 	maintainers, err := gordon.GetMaintainersFromRepo(".")
 	if err != nil {
-		gordon.WriteError("%s\n", err)
+		gordon.Fatalf("%s\n", err)
 	}
 
 	reviewers, err := gordon.ReviewPatch(patch, maintainers)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	gordon.DisplayReviewers(c, reviewers)
 }
@@ -204,7 +204,7 @@ func mainCmd(c *cli.Context) {
 	}
 	pr, comments, err := m.GetPullRequest(number, true)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	gordon.DisplayPullRequest(pr, comments)
 }
@@ -219,13 +219,13 @@ func authCmd(c *cli.Context) {
 	if userName != "" {
 		config.UserName = userName
 		if err := gordon.SaveConfig(*config); err != nil {
-			gordon.WriteError("%s", err)
+			gordon.Fatalf("%s", err)
 		}
 	}
 	if token != "" {
 		config.Token = token
 		if err := gordon.SaveConfig(*config); err != nil {
-			gordon.WriteError("%s", err)
+			gordon.Fatalf("%s", err)
 		}
 	}
 	// Display token and user information
@@ -247,24 +247,24 @@ func authCmd(c *cli.Context) {
 //If the user doesn't have permissions, add a comment #volunteer
 func takeCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		gordon.WriteError("usage: take ID")
+		gordon.Fatalf("usage: take ID")
 	}
 	number := c.Args()[0]
 	pr, _, err := m.GetPullRequest(number, false)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	user, err := m.GetGithubUser()
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	if pr.Assignee != nil && !c.Bool("overwrite") {
-		gordon.WriteError("Use --steal to steal the PR from %s", pr.Assignee.Login)
+		gordon.Fatalf("Use --steal to steal the PR from %s", pr.Assignee.Login)
 	}
 	pr.Assignee = user
 	patchedPR, err := m.PatchPullRequest(number, pr)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	if patchedPR.Assignee.Login != user.Login {
 		m.AddComment(number, "#volunteer")
@@ -276,30 +276,30 @@ func takeCmd(c *cli.Context) {
 
 func dropCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		gordon.WriteError("usage: drop ID")
+		gordon.Fatalf("usage: drop ID")
 	}
 	number := c.Args()[0]
 	pr, _, err := m.GetPullRequest(number, false)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	user, err := m.GetGithubUser()
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	if pr.Assignee == nil || pr.Assignee.Login != user.Login {
-		gordon.WriteError("Can't drop %s: it's not yours.", number)
+		gordon.Fatalf("Can't drop %s: it's not yours.", number)
 	}
 	pr.Assignee = nil
 	if _, err := m.PatchPullRequest(number, pr); err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	fmt.Printf("Unassigned PR %s\n", brush.Green(number))
 }
 
 func commentCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		gordon.WriteError("Please enter the issue's number")
+		gordon.Fatalf("Please enter the issue's number")
 	}
 	number := c.Args()[0]
 	editor := os.Getenv("EDITOR")
@@ -308,7 +308,7 @@ func commentCmd(c *cli.Context) {
 	}
 	tmp, err := ioutil.TempFile("", "pulls-comment-")
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	defer os.Remove(tmp.Name())
 	cmd := exec.Command(editor, tmp.Name())
@@ -316,14 +316,14 @@ func commentCmd(c *cli.Context) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		gordon.WriteError("%v", err)
+		gordon.Fatalf("%v", err)
 	}
 	comment, err := ioutil.ReadAll(tmp)
 	if err != nil {
-		gordon.WriteError("%v", err)
+		gordon.Fatalf("%v", err)
 	}
 	if _, err := m.AddComment(number, string(comment)); err != nil {
-		gordon.WriteError("%v", err)
+		gordon.Fatalf("%v", err)
 	}
 }
 
@@ -344,7 +344,7 @@ func main() {
 	}
 	t, err := gordon.NewMaintainerManager(client, org, name)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	m = t
 

@@ -19,7 +19,7 @@ var (
 func alruCmd(c *cli.Context) {
 	lru, err := m.GetFirstIssue("open", "updated")
 	if err != nil {
-		gordon.WriteError("Error getting issues: %s", err)
+		gordon.Fatalf("Error getting issues: %s", err)
 	}
 	fmt.Printf("%v (#%d)\n", gordon.HumanDuration(time.Since(lru.UpdatedAt)), lru.Number)
 }
@@ -27,7 +27,7 @@ func alruCmd(c *cli.Context) {
 func repositoryInfoCmd(c *cli.Context) {
 	r, err := m.Repository()
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	fmt.Printf("Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
 }
@@ -39,11 +39,11 @@ func takeCmd(c *cli.Context) {
 		number := c.Args()[0]
 		issue, _, err := m.GetIssue(number, false)
 		if err != nil {
-			gordon.WriteError("%s", err)
+			gordon.Fatalf("%s", err)
 		}
 		user, err := m.GetGithubUser()
 		if err != nil {
-			gordon.WriteError("%s", err)
+			gordon.Fatalf("%s", err)
 		}
 		if issue.Assignee.Login != "" && !c.Bool("overwrite") {
 			fmt.Printf("Use the flag --overwrite to take the issue from %s", issue.Assignee.Login)
@@ -52,7 +52,7 @@ func takeCmd(c *cli.Context) {
 		issue.Assignee = *user
 		patchedIssue, err := m.PatchIssue(number, issue)
 		if err != nil {
-			gordon.WriteError("%s", err)
+			gordon.Fatalf("%s", err)
 		}
 		if patchedIssue.Assignee.Login != user.Login {
 			m.AddComment(number, "#volunteer")
@@ -69,7 +69,7 @@ func takeCmd(c *cli.Context) {
 func buildQuery(c *cli.Context) string {
 	r, err := m.Repository()
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	// standard parameters
 	query := fmt.Sprintf("q=%s+repo:%s", c.Args()[0], r.FullName)
@@ -103,7 +103,7 @@ func searchCmd(c *cli.Context) {
 	if c.Args().Present() {
 		issues, err := m.GetIssuesFound(buildQuery(c))
 		if err != nil {
-			gordon.WriteError("%s", err)
+			gordon.Fatalf("%s", err)
 		}
 		fmt.Printf("%c[2K\r", 27)
 		gordon.DisplayIssues(c, issues, c.Bool("no-trunc"))
@@ -116,7 +116,7 @@ func searchCmd(c *cli.Context) {
 func addComment(number, comment string) {
 	cmt, err := m.AddComment(number, comment)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	gordon.DisplayCommentAdded(cmt)
 }
@@ -126,7 +126,7 @@ func mainCmd(c *cli.Context) {
 		filter := filters.GetIssueFilter(c)
 		issues, err := filter(m.GetIssues("open", c.String("assigned")))
 		if err != nil {
-			gordon.WriteError("Error getting issues: %s", err)
+			gordon.Fatalf("Error getting issues: %s", err)
 		}
 
 		fmt.Printf("%c[2K\r", 27)
@@ -152,7 +152,7 @@ func mainCmd(c *cli.Context) {
 
 	issue, comments, err := m.GetIssue(number, true)
 	if err != nil {
-		gordon.WriteError("%s", err)
+		gordon.Fatalf("%s", err)
 	}
 	gordon.DisplayIssue(issue, comments)
 }
@@ -167,13 +167,13 @@ func authCmd(c *cli.Context) {
 	if userName != "" {
 		config.UserName = userName
 		if err := gordon.SaveConfig(*config); err != nil {
-			gordon.WriteError("%s", err)
+			gordon.Fatalf("%s", err)
 		}
 	}
 	if token != "" {
 		config.Token = token
 		if err := gordon.SaveConfig(*config); err != nil {
-			gordon.WriteError("%s", err)
+			gordon.Fatalf("%s", err)
 		}
 	}
 	// Display token and user information

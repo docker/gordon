@@ -491,20 +491,15 @@ func (m *MaintainerManager) MergePullRequest(number, comment string, force bool)
 
 // Checkout the pull request into the working tree of
 // the users repository.
-// This will mimic the operations on the manual merge view
+//
+// It's up to the caller to decide what to do with the checked out
+// branch - typically created a named branch with 'checkout -b'.
 func (m *MaintainerManager) Checkout(pr *gh.PullRequest) error {
-	var (
-		userBranch        = fmt.Sprintf("%s-%s", pr.User.Login, pr.Head.Ref)
-		destinationBranch = pr.Base.Ref
-	)
-
-	// Checkout a new branch locally before pulling the changes
-	if err := Git("checkout", "-b", userBranch, destinationBranch); err != nil {
-		return err
+	if err := Git("fetch", pr.Head.Repo.CloneURL, pr.Head.Ref); err != nil {
+		return fmt.Errorf("git fetch: %v", err)
 	}
-
-	if err := Git("pull", pr.Head.Repo.CloneURL, pr.Head.Ref); err != nil {
-		return err
+	if err := Git("checkout", "FETCH_HEAD"); err != nil {
+		return fmt.Errorf("git checkout: %v", err)
 	}
 	return nil
 }

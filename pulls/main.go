@@ -146,8 +146,12 @@ func reviewersCmd(c *cli.Context) {
 		fmt.Println("Please enter a pull request number")
 		return
 	}
-	number := c.Args()[0]
-	var patch io.Reader
+
+	var (
+		patch  io.Reader
+		number = c.Args()[0]
+	)
+
 	if number == "-" {
 		patch = os.Stdin
 	} else {
@@ -155,6 +159,7 @@ func reviewersCmd(c *cli.Context) {
 		if err != nil {
 			gordon.WriteError("%s", err)
 		}
+
 		resp, err := http.Get(pr.DiffURL)
 		if err != nil {
 			gordon.WriteError("%s", err)
@@ -162,7 +167,13 @@ func reviewersCmd(c *cli.Context) {
 		patch = resp.Body
 		defer resp.Body.Close()
 	}
-	reviewers, err := gordon.ReviewPatch(patch, m.GetMaintainersDirMap())
+
+	maintainers, err := gordon.GetMaintainersFromRepo(".")
+	if err != nil {
+		gordon.WriteError("%s\n", err)
+	}
+
+	reviewers, err := gordon.ReviewPatch(patch, maintainers)
 	if err != nil {
 		gordon.WriteError("%s", err)
 	}

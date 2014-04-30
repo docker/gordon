@@ -6,8 +6,6 @@ import (
 	gh "github.com/crosbymichael/octokat"
 	"os"
 	"path"
-	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -15,12 +13,11 @@ import (
 
 // Top level type that manages a repository
 type MaintainerManager struct {
-	repo              gh.Repo
-	client            *gh.Client
-	email             string
-	maintainerDirMap  *MaintainerManagerDirectoriesMap
-	maintainersIds    *[]string
-	maintainersDirMap *map[string][]*Maintainer
+	repo       gh.Repo
+	client     *gh.Client
+	email      string
+	username   string
+	originPath string
 }
 
 type Config struct {
@@ -112,17 +109,12 @@ func NewMaintainerManager(client *gh.Client, org, repo string) (*MaintainerManag
 	if err != nil {
 		return nil, err
 	}
-	err = createMaintainerManagersDirectoriesMap(originPath, "", email, config.UserName)
-	if err != nil {
-		return nil, err
-	}
 	return &MaintainerManager{
-		repo:              gh.Repo{Name: repo, UserName: org},
-		client:            client,
-		maintainerDirMap:  &maintainerDirMap,
-		email:             email,
-		maintainersIds:    &maintainersIds,
-		maintainersDirMap: &maintainersDirMap,
+		repo:       gh.Repo{Name: repo, UserName: org},
+		client:     client,
+		email:      email,
+		originPath: originPath,
+		username:   config.UserName,
 	}, nil
 }
 
@@ -130,31 +122,19 @@ func (m *MaintainerManager) Repository() (*gh.Repository, error) {
 	return m.client.Repository(m.repo, nil)
 }
 
-func (m *MaintainerManager) IsMaintainer(userName string) bool {
-	i := sort.SearchStrings(*(m.maintainersIds), userName)
-	return (i < len(*(m.maintainersIds)) && (*(m.maintainersIds))[i] == userName)
-}
-
-func (m *MaintainerManager) GetMaintainersDirMap() *map[string][]*Maintainer {
-	return m.maintainersDirMap
+func (m *MaintainerManager) IsMaintainer(username string) bool {
+	return true
 }
 
 func (m *MaintainerManager) worker(prepr <-chan *gh.PullRequest, pospr chan<- *gh.PullRequest, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for p := range prepr {
-		prfs, err := m.GetPullRequestFiles(strconv.Itoa(p.Number))
+		pr, _, err := m.GetPullRequest(strconv.Itoa(p.Number), false)
 		if err != nil {
 			return
 		}
-		for _, prf := range prfs {
-			dirPath := filepath.Dir(prf.FileName)
-			i := sort.SearchStrings((*m.maintainerDirMap).paths, dirPath)
-			if i < len(m.maintainerDirMap.paths) && (*m.maintainerDirMap).paths[i] == dirPath {
-				pospr <- p
-				break
-			}
-		}
+		pospr <- pr
 		fmt.Printf(".")
 	}
 }

@@ -23,100 +23,53 @@ import (
 // There is no duplicate checks: the same maintainer may be present in multiple entries
 // of the map, or even multiple times in the same entry if the MAINTAINERS file has
 // duplicate lines.
-func ReviewPatch(src io.Reader, maintainersDirMap *map[string][]*Maintainer) (reviewers map[string][]*Maintainer, err error) {
-	reviewers = make(map[string][]*Maintainer)
+func ReviewPatch(src io.Reader, maintainers map[string][]string) (map[string][]string, error) {
+	var (
+		reviewers = make(map[string][]string)
+		index     = buildFileIndex(maintainers)
+	)
+
 	input, err := ioutil.ReadAll(src)
 	if err != nil {
 		return nil, err
 	}
+
 	set, err := patch.Parse(input)
 	if err != nil {
 		return nil, err
 	}
+	mapReviewers := func(rm map[string]bool) []string {
+		var (
+			i   int
+			out = make([]string, len(rm))
+		)
+		for k := range rm {
+			out[i] = k
+			i++
+		}
+		return out
+	}
+
 	for _, f := range set.File {
-		for _, target := range []string{f.Dst, f.Src} {
-			if target == "" {
+		for _, originalTarget := range []string{f.Dst, f.Src} {
+			if originalTarget == "" {
 				continue
 			}
-			target = path.Clean(target)
+			target := path.Clean(originalTarget)
 			if _, exists := reviewers[target]; exists {
 				continue
 			}
-			targetDir := "."
-			items := strings.Split(target, "/")
-			for i := 0; i < len(items)-1; i++ {
-				if targetDir == "." {
-					targetDir = items[i]
-				} else {
-					targetDir = path.Join(targetDir, items[i])
-				}
-			}
 
-			maintainers := (*maintainersDirMap)[targetDir]
-			if len(maintainers) == 0 {
-				parentPath := ""
-				for _, dir := range strings.Split(targetDir, "/") {
-					if parentPath == "" {
-						parentPath = "."
-					}
-					if len((*maintainersDirMap)[parentPath]) > 0 {
-						reviewers[target] = (*maintainersDirMap)[parentPath]
-					} else {
-						break
-					}
-					parentPath = path.Join(parentPath, dir)
-				}
-			} else {
-				reviewers[target] = maintainers
+			var fileMaintainers map[string]bool
+			fileMaintainers = index[target]
+			for len(fileMaintainers) == 0 {
+				target = path.Dir(target)
+				fileMaintainers = index[target]
 			}
-
+			reviewers[originalTarget] = mapReviewers(fileMaintainers)
 		}
 	}
 	return reviewers, nil
-}
-
-// Currently not being used
-func getMaintainers(target string) (maintainers []*Maintainer, err error) {
-	if _, err := os.Stat(target); err != nil {
-		return nil, err
-	}
-	target, err = filepath.Abs(target)
-	if err != nil {
-		return nil, err
-	}
-	if target == "/" {
-		return []*Maintainer{}, nil
-	}
-	defer func() {
-		if err == nil && (maintainers == nil || len(maintainers) == 0) {
-			maintainers, err = getMaintainers(path.Dir(target))
-		}
-	}()
-	if path.Base(target) == "MAINTAINERS" {
-		tpmf, err := TopMostMaintainerFile(path.Dir(target))
-		if err != nil {
-			return nil, err
-		}
-		if maintainers, exists := tpmf["."]; !exists || len(maintainers) == 0 {
-			return nil, fmt.Errorf("can't find the top-level maintainer to review MAINTAINERS change")
-		} else if lead := maintainers[0]; !lead.Active {
-			return nil, fmt.Errorf("can't review MAINTAINERS change: top-level maintainer %s is inactive", lead.FullName)
-		} else {
-			return []*Maintainer{lead}, nil
-		}
-	}
-	maintainerFile, err := LoadMaintainerFile(path.Dir(target))
-	if os.IsNotExist(err) {
-		return nil, nil
-	} else if err != nil {
-		return nil, err
-	}
-	if fileMaintainers, exists := maintainerFile[path.Base(target)]; exists {
-		return fileMaintainers, nil
-	} else if dirMaintainers, exists := maintainerFile["."]; exists {
-		return dirMaintainers, nil
-	}
-	return nil, nil
 }
 
 type MaintainerFile map[string][]*Maintainer

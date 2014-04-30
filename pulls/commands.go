@@ -16,6 +16,8 @@ func loadCommands(app *cli.App) {
 		cli.BoolFlag{"new", "display prs opened in the last 24 hours"},
 		cli.BoolFlag{"mine", "display only PRs I care about based on the MAINTAINERS files"},
 		cli.StringFlag{"sort", "updated", "sort the prs by (created, updated, popularity, long-running)"},
+		cli.StringFlag{"assigned", "", "display only prs assigned to a user"},
+		cli.BoolFlag{"unassigned", "display only unassigned prs"},
 	}
 	// Options modify how to display prs
 	options := []cli.Flag{

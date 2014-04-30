@@ -2,12 +2,13 @@ package filters
 
 import (
 	"fmt"
-	"github.com/codegangsta/cli"
-	gh "github.com/crosbymichael/octokat"
-	"github.com/dotcloud/gordon"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/codegangsta/cli"
+	gh "github.com/crosbymichael/octokat"
+	"github.com/dotcloud/gordon"
 )
 
 type PullRequestsFilter func(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error)
@@ -20,10 +21,18 @@ func GetPullRequestFilter(c *cli.Context) PullRequestsFilter {
 		filter = combinePullRequests(filter, newPullRequestsFilter)
 	}
 	if user := c.String("user"); user != "" {
-		filter = func(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error) {
+		filter = combinePullRequests(filter, func(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error) {
 			return userPullRequestsFilter(prs, user, err)
-		}
+		})
 	}
+	if c.Bool("unassigned") {
+		filter = combinePullRequests(filter, unassignedPullRequestsFilter)
+	} else if assigned := c.String("assigned"); assigned != "" {
+		filter = combinePullRequests(filter, func(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error) {
+			return assignedPullRequestsFilter(prs, assigned, err)
+		})
+	}
+
 	if c.Bool("lgtm") {
 		filter = combinePullRequests(filter, lgtmPullRequestsFilter)
 	}
@@ -110,6 +119,25 @@ func userPullRequestsFilter(prs []*gh.PullRequest, user string, err error) ([]*g
 		}
 	}
 	return out, nil
+}
+
+func assignedPullRequestsFilter(prs []*gh.PullRequest, assignee string, err error) ([]*gh.PullRequest, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	out := []*gh.PullRequest{}
+	for _, pr := range prs {
+		fmt.Printf(".")
+		if (assignee == "" && pr.Assignee == nil) || (pr.Assignee != nil && pr.Assignee.Login == assignee) {
+			out = append(out, pr)
+		}
+	}
+	return out, nil
+}
+
+func unassignedPullRequestsFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error) {
+	return assignedPullRequestsFilter(prs, "", err)
 }
 
 func lgtmPullRequestsFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error) {

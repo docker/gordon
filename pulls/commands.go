@@ -66,6 +66,20 @@ func loadCommands(app *cli.App) {
 			Action: approveCmd,
 		},
 		{
+			Name:   "take",
+			Usage:  "Assign a pull request to your github account",
+			Action: takeCmd,
+			Flags: []cli.Flag{
+				cli.BoolFlag{"steal", "steal the pull request from its current owner"},
+			},
+		},
+		{
+			Name:   "drop",
+			Usage:  "Give up ownership of a pull request assigned to you",
+			Action: dropCmd,
+			Flags:  []cli.Flag{},
+		},
+		{
 			Name:   "diff",
 			Usage:  "Print the patch submitted by a pull request",
 			Action: showCmd,

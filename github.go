@@ -533,6 +533,29 @@ func (m *MaintainerManager) PatchIssue(number string, issue *gh.Issue) (*gh.Issu
 	return patchedIssue, err
 }
 
+// Patch a pull request
+func (m *MaintainerManager) PatchPullRequest(number string, pr *gh.PullRequest) (*gh.PullRequest, error) {
+	o := &gh.Options{}
+	params := map[string]string{
+		"title": pr.Title,
+		"body":  pr.Body,
+	}
+	if pr.Assignee == nil {
+		params["assignee"] = ""
+	} else {
+		params["assignee"] = pr.Assignee.Login
+	}
+	o.Params = params
+	// octokat doesn't expose PatchPullRequest. Use PatchIssue instead.
+	_, err := m.client.PatchIssue(m.repo, number, o)
+	if err != nil {
+		return nil, nil
+	}
+	// Simulate the result of the patching
+	patchedPR := *pr
+	return &patchedPR, nil
+}
+
 func (m *MaintainerManager) GetFirstIssue(state, sortBy string) (*gh.Issue, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{

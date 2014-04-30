@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/aybabtme/color/brush"
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
 	"github.com/dotcloud/gordon"
 	"github.com/dotcloud/gordon/filters"
-	"io"
-	"net/http"
-	"os"
-	"time"
 )
 
 var (
@@ -230,6 +231,64 @@ func authCmd(c *cli.Context) {
 	} else {
 		fmt.Fprintf(os.Stderr, "No token registered\n")
 		os.Exit(1)
+	}
+}
+
+//Assign a pull request to the current user.
+// If it's taken, show a message with the "--steal" optional flag.
+//If the user doesn't have permissions, add a comment #volunteer
+func takeCmd(c *cli.Context) {
+	if c.Args().Present() {
+		number := c.Args()[0]
+		pr, _, err := m.GetPullRequest(number, false)
+		if err != nil {
+			gordon.WriteError("%s", err)
+		}
+		user, err := m.GetGithubUser()
+		if err != nil {
+			gordon.WriteError("%s", err)
+		}
+		if pr.Assignee != nil && !c.Bool("overwrite") {
+			gordon.WriteError("Use --steal to steal the PR from %s", pr.Assignee.Login)
+		}
+		pr.Assignee = user
+		patchedPR, err := m.PatchPullRequest(number, pr)
+		if err != nil {
+			gordon.WriteError("%s", err)
+		}
+		if patchedPR.Assignee.Login != user.Login {
+			m.AddComment(number, "#volunteer")
+			fmt.Fprintf(os.Stdout, "No permission to assign. You '%s' was added as #volunteer.\n", user.Login)
+		} else {
+			fmt.Fprintf(os.Stdout, "Assigned PR %s to %s\n", brush.Green(number), patchedPR.Assignee.Login)
+		}
+	} else {
+		gordon.WriteError("Please enter the issue's number")
+	}
+}
+
+func dropCmd(c *cli.Context) {
+	if c.Args().Present() {
+		number := c.Args()[0]
+		pr, _, err := m.GetPullRequest(number, false)
+		if err != nil {
+			gordon.WriteError("%s", err)
+		}
+		user, err := m.GetGithubUser()
+		if err != nil {
+			gordon.WriteError("%s", err)
+		}
+		if pr.Assignee == nil || pr.Assignee.Login != user.Login {
+			gordon.WriteError("Can't drop %s: it's not yours.", number)
+		}
+		pr.Assignee = nil
+		if _, err := m.PatchPullRequest(number, pr); err != nil {
+			gordon.WriteError("%s", err)
+		}
+		fmt.Fprintf(os.Stdout, "Unassigned PR %s\n", brush.Green(number))
+
+	} else {
+		gordon.WriteError("Please enter the issue's number")
 	}
 }
 

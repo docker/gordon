@@ -14,8 +14,11 @@ type remote struct {
 	Url  string
 }
 
-func WriteError(format string, err error) {
-	fmt.Fprintf(os.Stderr, format, err)
+func WriteError(format string, args ...interface{}) {
+	if !strings.HasSuffix(format, "\n") {
+		format = format + "\n"
+	}
+	fmt.Fprintf(os.Stderr, format, args...)
 	os.Exit(1)
 }
 

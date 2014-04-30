@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/aybabtme/color/brush"
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
 	"io"
@@ -51,11 +50,11 @@ func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) 
 		if c.Bool("lgtm") {
 			lgtm := strconv.Itoa(p.ReviewComments)
 			if p.ReviewComments >= 2 {
-				lgtm = brush.Green(lgtm).String()
+				lgtm = Green(lgtm)
 			} else if p.ReviewComments == 0 {
-				lgtm = brush.DarkRed(lgtm).String()
+				lgtm = DarkRed(lgtm)
 			} else {
-				lgtm = brush.DarkYellow(lgtm).String()
+				lgtm = DarkYellow(lgtm)
 			}
 			fmt.Fprintf(w, "\t%s", lgtm)
 		}
@@ -128,17 +127,17 @@ func DisplayContributors(c *cli.Context, contributors []*gh.Contributor) {
 }
 
 func DisplayPullRequest(pr *gh.PullRequest, comments []gh.Comment) {
-	fmt.Fprint(os.Stdout, fmt.Sprintf("Pull Request from: %s", brush.Green("@"+pr.User.Login)), "\n")
+	fmt.Fprint(os.Stdout, fmt.Sprintf("Pull Request from: %s", Green("@"+pr.User.Login)), "\n")
 	fmt.Printf("No: %d\nTitle: %s\n", pr.Number, pr.Title)
 
 	if pr.Merged {
-		fmt.Fprintf(os.Stdout, "\nMerged by: %s\nMerged at: %s\nMerge Commit: %s\n\n", brush.Yellow("@"+pr.MergedBy.Login), brush.Yellow(pr.MergedAt.Format(time.RubyDate)), brush.Yellow(pr.MergeCommitSha))
+		fmt.Fprintf(os.Stdout, "\nMerged by: %s\nMerged at: %s\nMerge Commit: %s\n\n", Yellow("@"+pr.MergedBy.Login), Yellow(pr.MergedAt.Format(time.RubyDate)), Yellow(pr.MergeCommitSha))
 	} else {
 		m := fmt.Sprintf("%t", pr.Mergeable)
 		if pr.Mergeable {
-			fmt.Fprintf(os.Stdout, "Mergeable: %s", brush.Green(m))
+			fmt.Fprintf(os.Stdout, "Mergeable: %s", Green(m))
 		} else {
-			fmt.Fprintf(os.Stdout, "Mergeable: %s", brush.Red(m))
+			fmt.Fprintf(os.Stdout, "Mergeable: %s", Red(m))
 		}
 	}
 	fmt.Fprint(os.Stdout, "\n")
@@ -156,7 +155,7 @@ func DisplayPullRequest(pr *gh.PullRequest, comments []gh.Comment) {
 func DisplayComments(comments []gh.Comment) {
 	fmt.Fprintln(os.Stdout, "Comments:")
 	for _, c := range comments {
-		fmt.Printf("<%s\n@%s %s\n%s\n%s>", strings.Repeat("=", 79), brush.Red(c.User.Login), c.CreatedAt.Format(defaultTimeFormat), strings.Replace(c.Body, "LGTM", fmt.Sprintf("%s", brush.Green("LGTM")), -1), strings.Repeat("=", 79))
+		fmt.Printf("<%s\n@%s %s\n%s\n%s>", strings.Repeat("=", 79), Red(c.User.Login), c.CreatedAt.Format(defaultTimeFormat), strings.Replace(c.Body, "LGTM", fmt.Sprintf("%s", Green("LGTM")), -1), strings.Repeat("=", 79))
 		fmt.Fprint(os.Stdout, "\n\n")
 	}
 }
@@ -170,7 +169,7 @@ func printIssue(c *cli.Context, w *tabwriter.Writer, number int, updatedAt time.
 	if c.Int("votes") > 0 {
 		votes := strconv.Itoa(comments)
 		if comments >= 2 {
-			votes = brush.Green(votes).String()
+			votes = Green(votes)
 		}
 		fmt.Fprintf(w, "\t%s", votes)
 	}
@@ -202,7 +201,7 @@ func DisplayIssues(c *cli.Context, v interface{}, notrunc bool) {
 }
 
 func DisplayIssue(issue *gh.Issue, comments []gh.Comment) {
-	fmt.Fprint(os.Stdout, brush.Green("Issue:"), "\n")
+	fmt.Fprint(os.Stdout, Green("Issue:"), "\n")
 	fmt.Printf("No: %d\nTitle: %s\n\n", issue.Number, issue.Title)
 
 	lines := strings.Split(issue.Body, "\n")
@@ -247,9 +246,9 @@ func DisplayPatch(r io.Reader) error {
 
 		switch t[0] {
 		case '-':
-			fmt.Fprintln(os.Stdout, brush.Red(t))
+			fmt.Fprintln(os.Stdout, Red(t))
 		case '+':
-			fmt.Fprintln(os.Stdout, brush.Green(t))
+			fmt.Fprintln(os.Stdout, Green(t))
 		default:
 			fmt.Fprintln(os.Stdout, t)
 		}

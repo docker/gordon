@@ -270,6 +270,7 @@ func takeCmd(c *cli.Context) {
 		m.AddComment(number, "#volunteer")
 		fmt.Printf("No permission to assign. You '%s' was added as #volunteer.\n", user.Login)
 	} else {
+		m.AddComment(number, fmt.Sprintf("#assignee=%s", patchedPR.Assignee.Login))
 		fmt.Printf("Assigned PR %s to %s\n", brush.Green(number), patchedPR.Assignee.Login)
 	}
 }

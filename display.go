@@ -128,8 +128,20 @@ func DisplayContributors(c *cli.Context, contributors []*gh.Contributor) {
 }
 
 func DisplayPullRequest(pr *gh.PullRequest, comments []gh.Comment) {
-	fmt.Fprint(os.Stdout, brush.Green("Pull Request:"), "\n")
-	fmt.Printf("No: %d\nTitle: %s\n\n", pr.Number, pr.Title)
+	fmt.Fprint(os.Stdout, fmt.Sprintf("Pull Request from: %s", brush.Green("@"+pr.User.Login)), "\n")
+	fmt.Printf("No: %d\nTitle: %s\n", pr.Number, pr.Title)
+
+	if pr.Merged {
+		fmt.Fprintf(os.Stdout, "\nMerged by: %s\nMerged at: %s\nMerge Commit: %s\n\n", brush.Yellow("@"+pr.MergedBy.Login), brush.Yellow(pr.MergedAt.Format(time.RubyDate)), brush.Yellow(pr.MergeCommitSha))
+	} else {
+		m := fmt.Sprintf("%t", pr.Mergeable)
+		if pr.Mergeable {
+			fmt.Fprintf(os.Stdout, "Mergeable: %s", brush.Green(m))
+		} else {
+			fmt.Fprintf(os.Stdout, "Mergeable: %s", brush.Red(m))
+		}
+	}
+	fmt.Fprint(os.Stdout, "\n")
 
 	lines := strings.Split(pr.Body, "\n")
 	for i, l := range lines {

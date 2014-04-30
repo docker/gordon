@@ -21,10 +21,14 @@ var (
 )
 
 func displayAllPullRequests(c *cli.Context, state string, showAll bool) {
-	filter := filters.GetPullRequestFilter(c)
-	prs, err := filter(m.GetPullRequestsThatICareAbout(showAll, state, c.String("sort")))
+	var prs, err = m.GetPullRequestsThatICareAbout(showAll, state, c.String("sort"))
+
 	if err != nil {
 		gordon.Fatalf("Error getting pull requests %s", err)
+	}
+	prs, err = filters.FilterPullRequests(c, prs)
+	if err != nil {
+		gordon.Fatalf("Error filtering pull requests %s", err)
 	}
 
 	fmt.Printf("%c[2K\r", 27)

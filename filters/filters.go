@@ -73,103 +73,53 @@ func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullReques
 			}
 
 		}
+
 		out = append(out, pr)
 	}
 	return out, nil
 
 }
 
-type IssuesFilter func(issues []*gh.Issue, err error) ([]*gh.Issue, error)
-
-// Return the pr filter based on the context
-func GetIssueFilter(c *cli.Context) IssuesFilter {
-	filter := defaultIssuesFilter
-	if c.Bool("new") {
-		filter = combineIssues(filter, newIssuesFilter)
+func FilterIssues(c *cli.Context, issues []*gh.Issue) ([]*gh.Issue, error) {
+	var (
+		yesterday      = time.Now().Add(-24 * time.Hour)
+		out            = []*gh.Issue{}
+		client         = gh.NewClient()
+		org, name, err = gordon.GetOriginUrl()
+	)
+	if err != nil {
+		return nil, err
 	}
-	if numVotes := c.Int("votes"); numVotes > 0 {
-		filter = func(issues []*gh.Issue, err error) ([]*gh.Issue, error) {
-			return voteIssuesFilter(issues, numVotes, err)
-		}
-	}
-	return filter
-}
-
-func combineIssues(filter, next IssuesFilter) IssuesFilter {
-	return func(prs []*gh.Issue, err error) ([]*gh.Issue, error) {
-		return next(filter(prs, err))
-	}
-}
-
-func defaultIssuesFilter(prs []*gh.Issue, err error) ([]*gh.Issue, error) {
-	return prs, err
-}
-
-func assignedPullRequestsFilter(prs []*gh.PullRequest, assignee string, err error) ([]*gh.PullRequest, error) {
+	t, err := gordon.NewMaintainerManager(client, org, name)
 	if err != nil {
 		return nil, err
 	}
 
-	out := []*gh.PullRequest{}
-	for _, pr := range prs {
-		fmt.Printf(".")
-		if (assignee == "" && pr.Assignee == nil) || (pr.Assignee != nil && pr.Assignee.Login == assignee) {
-			out = append(out, pr)
-		}
-	}
-	return out, nil
-}
-
-func unassignedPullRequestsFilter(prs []*gh.PullRequest, err error) ([]*gh.PullRequest, error) {
-	return assignedPullRequestsFilter(prs, "", err)
-}
-
-func voteIssuesFilter(issues []*gh.Issue, numVotes int, err error) ([]*gh.Issue, error) {
-	if err != nil {
-		return nil, err
-	}
-
-	out := []*gh.Issue{}
 	for _, issue := range issues {
 		fmt.Printf(".")
-		client := gh.NewClient()
-		org, name, err := gordon.GetOriginUrl()
-		if err != nil {
-			return nil, err
+
+		if c.Bool("new") && !issue.CreatedAt.After(yesterday) {
+			continue
 		}
-		t, err := gordon.NewMaintainerManager(client, org, name)
-		if err != nil {
-			return nil, err
-		}
-		comments, err := t.GetComments(strconv.Itoa(issue.Number))
-		if err != nil {
-			return nil, err
-		}
-		issue.Comments = 0
-		for _, comment := range comments {
-			if strings.Contains(comment.Body, "+1") {
-				issue.Comments += 1
+
+		if numVotes := c.Int("votes"); numVotes > 0 {
+			comments, err := t.GetComments(strconv.Itoa(issue.Number))
+			if err != nil {
+				return nil, err
+			}
+			issue.Comments = 0
+			for _, comment := range comments {
+				if strings.Contains(comment.Body, "+1") {
+					issue.Comments += 1
+				}
+			}
+			if issue.Comments < numVotes {
+				continue
 			}
 		}
-		if issue.Comments >= numVotes {
-			out = append(out, issue)
-		}
+
+		out = append(out, issue)
 	}
 	return out, nil
-}
 
-func newIssuesFilter(issues []*gh.Issue, err error) ([]*gh.Issue, error) {
-	if err != nil {
-		return nil, err
-	}
-
-	yesterday := time.Now().Add(-24 * time.Hour)
-	out := []*gh.Issue{}
-	for _, issue := range issues {
-		fmt.Printf(".")
-		if issue.CreatedAt.After(yesterday) {
-			out = append(out, issue)
-		}
-	}
-	return out, nil
 }

@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path"
+	"time"
+
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
 	"github.com/dotcloud/gordon"
 	"github.com/dotcloud/gordon/filters"
-	"os"
-	"path"
-	"time"
 )
 
 var (
@@ -123,10 +124,14 @@ func addComment(number, comment string) {
 
 func mainCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		filter := filters.GetIssueFilter(c)
-		issues, err := filter(m.GetIssues("open", c.String("assigned")))
+		var issues, err = m.GetIssues("open", c.String("assigned"))
+
 		if err != nil {
 			gordon.Fatalf("Error getting issues: %s", err)
+		}
+		issues, err = filters.FilterIssues(c, issues)
+		if err != nil {
+			gordon.Fatalf("Error filtering issues: %s", err)
 		}
 
 		fmt.Printf("%c[2K\r", 27)

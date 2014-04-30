@@ -1,11 +1,9 @@
 package gordon
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	gh "github.com/crosbymichael/octokat"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -25,27 +23,14 @@ type MaintainerManager struct {
 	maintainersDirMap *map[string][]*Maintainer
 }
 
-type MaintainerManagerDirectoriesMap struct {
-	paths []string
-}
-
 type Config struct {
 	Token    string
 	UserName string
 }
 
-const (
-	MaintainerManagersFileName = "MAINTAINERS"
-	NumWorkers                 = 10
-)
-
 var (
-	maintainerDirMap  = MaintainerManagerDirectoriesMap{}
-	maintainersIds    = []string{}
-	maintainersDirMap = map[string][]*Maintainer{}
-	belongsToOthers   = false
-	fileMaintainers   = []*Maintainer{}
-	configPath        = path.Join(os.Getenv("HOME"), ".maintainercfg")
+	belongsToOthers = false
+	configPath      = path.Join(os.Getenv("HOME"), ".maintainercfg")
 )
 
 func LoadConfig() (*Config, error) {
@@ -98,97 +83,6 @@ func getRepoPath(pth, org string) string {
 	return repoPath
 }
 
-func getMaintainerManagersIds(pth string) (*[]string, []*Maintainer, error) {
-	maintainersFileMap := []string{}
-	file, _ := os.Open(pth)
-	scanner := bufio.NewScanner(file)
-	var maintainers = []*Maintainer{}
-	for scanner.Scan() {
-
-		if t := scanner.Text(); t != "" && t[0] != '#' {
-			m := parseMaintainer(t)
-			if m.Username == "" && m.Email == "" {
-				return nil, nil, fmt.Errorf("Incorrect maintainer format: %s", m.Raw)
-			}
-			if m.Username != "" {
-				maintainers = append(maintainers, []*Maintainer{m}...)
-			}
-			if m.Email != "" {
-				email := []string{m.Email}
-				maintainersFileMap = append(maintainersFileMap, email...)
-			}
-			if m.Username != "" {
-				userName := []string{m.Username}
-				maintainersFileMap = append(maintainersFileMap, userName...)
-			}
-		}
-	}
-	sort.Strings(maintainersFileMap)
-
-	return &maintainersFileMap, maintainers, nil
-}
-
-func createMaintainerManagersDirectoriesMap(pth, cpth, maintainerEmail, userName string) error {
-	names, err := ioutil.ReadDir(pth)
-	if err != nil {
-		return err
-	}
-	// Look for the MaintainerManager File
-	var (
-		foundMaintainerManagersFile      = false
-		iAmOneOfTheMaintainerManagers    = false
-		belongsToOtherMaintainerManagers = false
-	)
-
-	for _, name := range names {
-		if strings.EqualFold(name.Name(), MaintainerManagersFileName) {
-			foundMaintainerManagersFile = true
-			var ids = &[]string{}
-			ids, fileMaintainers, err = getMaintainerManagersIds(path.Join(pth, name.Name()))
-			maintainersIds = append(maintainersIds, (*ids)...)
-			sort.Strings(maintainersIds)
-			if err != nil {
-				return err
-			}
-			i := sort.SearchStrings(*ids, maintainerEmail)
-			if i < len(*ids) && (*ids)[i] == maintainerEmail {
-				iAmOneOfTheMaintainerManagers = true
-			} else {
-				i := sort.SearchStrings(*ids, userName)
-				if i < len(*ids) && (*ids)[i] == userName {
-					iAmOneOfTheMaintainerManagers = true
-				}
-			}
-		}
-	}
-
-	// Save the maintainers list related to the current directory
-	tmpcpth := cpth
-	if cpth == "" {
-		tmpcpth = "."
-	}
-	if foundMaintainerManagersFile {
-		maintainersDirMap[tmpcpth] = fileMaintainers
-	}
-	// Check if we need to add the directory to the maintainer's  directories mapping tree
-	if (!foundMaintainerManagersFile && !belongsToOthers) || iAmOneOfTheMaintainerManagers {
-		currentPath := []string{tmpcpth}
-		maintainerDirMap.paths = append(maintainerDirMap.paths, currentPath...)
-	} else if foundMaintainerManagersFile || belongsToOthers {
-		belongsToOtherMaintainerManagers = true
-	}
-	for _, name := range names {
-		if name.IsDir() && name.Name()[0] != '.' {
-			tmpcpth := path.Join(cpth, name.Name())
-			newPath := path.Join(pth, name.Name())
-			belongsToOthers = belongsToOtherMaintainerManagers
-			createMaintainerManagersDirectoriesMap(newPath, tmpcpth, maintainerEmail, userName)
-		}
-	}
-
-	return err
-}
-
 func getOriginPath(repo string) (string, error) {
 	currentPath, err := os.Getwd()
 	if err != nil {
@@ -206,7 +100,6 @@ func getOriginPath(repo string) (string, error) {
 }
 
 func NewMaintainerManager(client *gh.Client, org, repo string) (*MaintainerManager, error) {
-
 	config, err := LoadConfig()
 	if err == nil {
 		client.WithToken(config.Token)

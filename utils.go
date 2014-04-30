@@ -14,7 +14,7 @@ type remote struct {
 	Url  string
 }
 
-func WriteError(format string, args ...interface{}) {
+func Fatalf(format string, args ...interface{}) {
 	if !strings.HasSuffix(format, "\n") {
 		format = format + "\n"
 	}

@@ -18,13 +18,13 @@ const (
 func GetMaintainersFromRepo(repoPath string) (map[string][]string, error) {
 	current := make(map[string][]string)
 
-	if err := getMaintainersForDirectory(repoPath, current); err != nil {
+	if err := getMaintainersForDirectory(repoPath, repoPath, current); err != nil {
 		return nil, err
 	}
 	return current, nil
 }
 
-func getMaintainersForDirectory(dir string, current map[string][]string) error {
+func getMaintainersForDirectory(root, dir string, current map[string][]string) error {
 	maintainersPerFile, err := getMaintainersFromFile(dir)
 	if err != nil && !os.IsNotExist(err) {
 		return err
@@ -32,7 +32,11 @@ func getMaintainersForDirectory(dir string, current map[string][]string) error {
 
 	for m, files := range maintainersPerFile {
 		for _, f := range files {
-			current[m] = append(current[m], filepath.Join(dir, f))
+			p, err := filepath.Rel(root, filepath.Join(dir, f))
+			if err != nil {
+				return err
+			}
+			current[m] = append(current[m], p)
 		}
 	}
 
@@ -42,8 +46,8 @@ func getMaintainersForDirectory(dir string, current map[string][]string) error {
 	}
 
 	for _, fi := range contents {
-		if fi.IsDir() {
-			if err := getMaintainersForDirectory(filepath.Join(dir, fi.Name()), current); err != nil {
+		if fi.IsDir() && fi.Name() != ".git" {
+			if err := getMaintainersForDirectory(root, filepath.Join(dir, fi.Name()), current); err != nil {
 				return err
 			}
 		}
@@ -72,14 +76,14 @@ func getMaintainersFromFile(dir string) (map[string][]string, error) {
 			continue
 		}
 		m := parseMaintainer(t)
-		if m.Email == "" {
+		if m.Email == "" || m.Username == "" {
 			return nil, fmt.Errorf("invalid maintainer file format %s in %s", t, maintainerFile)
 		}
 		target := m.Target
 		if target == "" {
 			target = "*"
 		}
-		maintainer[m.Email] = append(maintainer[m.Email], target)
+		maintainer[m.Username] = append(maintainer[m.Username], target)
 	}
 	return maintainer, nil
 }

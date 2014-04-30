@@ -81,3 +81,11 @@ func Git(args ...string) error {
 
 	return cmd.Run()
 }
+
+func GetTopLevelGitRepo() (string, error) {
+	out, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.Trim(string(out), "\n"), nil
+}

@@ -63,7 +63,7 @@ func repositoryInfoCmd(c *cli.Context) {
 	if err != nil {
 		gordon.WriteError("%s", err)
 	}
-	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
+	fmt.Printf("Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
 }
 
 func mergeCmd(c *cli.Context) {
@@ -77,7 +77,7 @@ func mergeCmd(c *cli.Context) {
 		gordon.WriteError("%s", err)
 	}
 	if merge.Merged {
-		fmt.Fprintf(os.Stdout, "%s\n", brush.Green(merge.Message))
+		fmt.Printf("%s\n", brush.Green(merge.Message))
 	} else {
 		gordon.WriteError("%s", err)
 	}
@@ -108,7 +108,7 @@ func approveCmd(c *cli.Context) {
 	if _, err := m.AddComment(number, "LGTM"); err != nil {
 		gordon.WriteError("%s", err)
 	}
-	fmt.Fprintf(os.Stdout, "Pull request %s approved\n", brush.Green(number))
+	fmt.Printf("Pull request %s approved\n", brush.Green(number))
 }
 
 // Show the patch in a PR
@@ -236,10 +236,10 @@ func authCmd(c *cli.Context) {
 	// Display token and user information
 	if config, err := gordon.LoadConfig(); err == nil {
 		if config.UserName != "" {
-			fmt.Fprintf(os.Stdout, "Token: %s, UserName: %s\n", config.Token, config.UserName)
+			fmt.Printf("Token: %s, UserName: %s\n", config.Token, config.UserName)
 		} else {
 
-			fmt.Fprintf(os.Stdout, "Token: %s\n", config.Token)
+			fmt.Printf("Token: %s\n", config.Token)
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "No token registered\n")
@@ -271,9 +271,9 @@ func takeCmd(c *cli.Context) {
 		}
 		if patchedPR.Assignee.Login != user.Login {
 			m.AddComment(number, "#volunteer")
-			fmt.Fprintf(os.Stdout, "No permission to assign. You '%s' was added as #volunteer.\n", user.Login)
+			fmt.Printf("No permission to assign. You '%s' was added as #volunteer.\n", user.Login)
 		} else {
-			fmt.Fprintf(os.Stdout, "Assigned PR %s to %s\n", brush.Green(number), patchedPR.Assignee.Login)
+			fmt.Printf("Assigned PR %s to %s\n", brush.Green(number), patchedPR.Assignee.Login)
 		}
 	} else {
 		gordon.WriteError("Please enter the issue's number")
@@ -298,7 +298,7 @@ func dropCmd(c *cli.Context) {
 		if _, err := m.PatchPullRequest(number, pr); err != nil {
 			gordon.WriteError("%s", err)
 		}
-		fmt.Fprintf(os.Stdout, "Unassigned PR %s\n", brush.Green(number))
+		fmt.Printf("Unassigned PR %s\n", brush.Green(number))
 
 	} else {
 		gordon.WriteError("Please enter the issue's number")

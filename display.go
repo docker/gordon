@@ -129,14 +129,14 @@ func DisplayContributors(c *cli.Context, contributors []*gh.Contributor) {
 
 func DisplayPullRequest(pr *gh.PullRequest, comments []gh.Comment) {
 	fmt.Fprint(os.Stdout, brush.Green("Pull Request:"), "\n")
-	fmt.Fprintf(os.Stdout, "No: %d\nTitle: %s\n\n", pr.Number, pr.Title)
+	fmt.Printf("No: %d\nTitle: %s\n\n", pr.Number, pr.Title)
 
 	lines := strings.Split(pr.Body, "\n")
 	for i, l := range lines {
 		lines[i] = "\t" + l
 	}
-	fmt.Fprintf(os.Stdout, "Description:\n\n%s\n\n", strings.Join(lines, "\n"))
-	fmt.Fprintf(os.Stdout, "\n\n")
+	fmt.Printf("Description:\n\n%s\n\n", strings.Join(lines, "\n"))
+	fmt.Printf("\n\n")
 
 	DisplayComments(comments)
 }
@@ -144,13 +144,13 @@ func DisplayPullRequest(pr *gh.PullRequest, comments []gh.Comment) {
 func DisplayComments(comments []gh.Comment) {
 	fmt.Fprintln(os.Stdout, "Comments:")
 	for _, c := range comments {
-		fmt.Fprintf(os.Stdout, "<%s\n@%s %s\n%s\n%s>", strings.Repeat("=", 79), brush.Red(c.User.Login), c.CreatedAt.Format(defaultTimeFormat), strings.Replace(c.Body, "LGTM", fmt.Sprintf("%s", brush.Green("LGTM")), -1), strings.Repeat("=", 79))
+		fmt.Printf("<%s\n@%s %s\n%s\n%s>", strings.Repeat("=", 79), brush.Red(c.User.Login), c.CreatedAt.Format(defaultTimeFormat), strings.Replace(c.Body, "LGTM", fmt.Sprintf("%s", brush.Green("LGTM")), -1), strings.Repeat("=", 79))
 		fmt.Fprint(os.Stdout, "\n\n")
 	}
 }
 
 func DisplayCommentAdded(cmt gh.Comment) {
-	fmt.Fprintf(os.Stdout, "Comment added at %s\n", cmt.CreatedAt.Format(defaultTimeFormat))
+	fmt.Printf("Comment added at %s\n", cmt.CreatedAt.Format(defaultTimeFormat))
 }
 
 func printIssue(c *cli.Context, w *tabwriter.Writer, number int, updatedAt time.Time, login string, title string, comments int) {
@@ -191,14 +191,14 @@ func DisplayIssues(c *cli.Context, v interface{}, notrunc bool) {
 
 func DisplayIssue(issue *gh.Issue, comments []gh.Comment) {
 	fmt.Fprint(os.Stdout, brush.Green("Issue:"), "\n")
-	fmt.Fprintf(os.Stdout, "No: %d\nTitle: %s\n\n", issue.Number, issue.Title)
+	fmt.Printf("No: %d\nTitle: %s\n\n", issue.Number, issue.Title)
 
 	lines := strings.Split(issue.Body, "\n")
 	for i, l := range lines {
 		lines[i] = "\t" + l
 	}
-	fmt.Fprintf(os.Stdout, "Description:\n\n%s\n\n", strings.Join(lines, "\n"))
-	fmt.Fprintf(os.Stdout, "\n\n")
+	fmt.Printf("Description:\n\n%s\n\n", strings.Join(lines, "\n"))
+	fmt.Printf("\n\n")
 
 	DisplayComments(comments)
 }

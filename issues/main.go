@@ -29,7 +29,7 @@ func repositoryInfoCmd(c *cli.Context) {
 	if err != nil {
 		gordon.WriteError("%s", err)
 	}
-	fmt.Fprintf(os.Stdout, "Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
+	fmt.Printf("Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
 }
 
 //Take a specific issue. If it's taken, show a message with the overwrite optional flag
@@ -46,7 +46,7 @@ func takeCmd(c *cli.Context) {
 			gordon.WriteError("%s", err)
 		}
 		if issue.Assignee.Login != "" && !c.Bool("overwrite") {
-			fmt.Fprintf(os.Stdout, "Use the flag --overwrite to take the issue from %s", issue.Assignee.Login)
+			fmt.Printf("Use the flag --overwrite to take the issue from %s", issue.Assignee.Login)
 			return
 		}
 		issue.Assignee = *user
@@ -56,12 +56,12 @@ func takeCmd(c *cli.Context) {
 		}
 		if patchedIssue.Assignee.Login != user.Login {
 			m.AddComment(number, "#volunteer")
-			fmt.Fprintf(os.Stdout, "No permission to assign. You '%s' was added as #volunteer.", user.Login)
+			fmt.Printf("No permission to assign. You '%s' was added as #volunteer.", user.Login)
 		} else {
-			fmt.Fprintf(os.Stdout, "The issue %s was assigned to %s", number, patchedIssue.Assignee.Login)
+			fmt.Printf("The issue %s was assigned to %s", number, patchedIssue.Assignee.Login)
 		}
 	} else {
-		fmt.Fprintf(os.Stdout, "Please enter the issue's number")
+		fmt.Printf("Please enter the issue's number")
 	}
 
 }
@@ -108,7 +108,7 @@ func searchCmd(c *cli.Context) {
 		fmt.Printf("%c[2K\r", 27)
 		gordon.DisplayIssues(c, issues, c.Bool("no-trunc"))
 	} else {
-		fmt.Fprintf(os.Stdout, "Please enter a search term")
+		fmt.Printf("Please enter a search term")
 	}
 
 }
@@ -146,7 +146,7 @@ func mainCmd(c *cli.Context) {
 
 	if c.Bool("vote") {
 		addComment(number, "+1")
-		fmt.Fprintf(os.Stdout, "Vote added to the issue: %s", number)
+		fmt.Printf("Vote added to the issue: %s", number)
 		return
 	}
 
@@ -179,10 +179,10 @@ func authCmd(c *cli.Context) {
 	// Display token and user information
 	if config, err := gordon.LoadConfig(); err == nil {
 		if config.UserName != "" {
-			fmt.Fprintf(os.Stdout, "Token: %s, UserName: %s\n", config.Token, config.UserName)
+			fmt.Printf("Token: %s, UserName: %s\n", config.Token, config.UserName)
 		} else {
 
-			fmt.Fprintf(os.Stdout, "Token: %s\n", config.Token)
+			fmt.Printf("Token: %s\n", config.Token)
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "No token registered\n")

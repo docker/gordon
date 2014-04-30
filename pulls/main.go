@@ -327,6 +327,17 @@ func commentCmd(c *cli.Context) {
 	}
 }
 
+func closeCmd(c *cli.Context) {
+	if !c.Args().Present() {
+		gordon.Fatalf("Please enter the issue's number")
+	}
+	number := c.Args()[0]
+	if err := m.Close(number); err != nil {
+		gordon.Fatalf("%v", err)
+	}
+	fmt.Printf("Closed PR %s\n", number)
+}
+
 func main() {
 
 	app := cli.NewApp()

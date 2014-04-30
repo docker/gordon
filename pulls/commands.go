@@ -63,6 +63,13 @@ func loadCommands(app *cli.App) {
 			},
 		},
 		{
+			Name:   "close",
+			Usage:  "Close a pull request without merging it",
+			Action: closeCmd,
+			Flags: []cli.Flag{
+			},
+		},
+		{
 			Name:   "checkout",
 			Usage:  "Checkout a pull request into your local repo",
 			Action: checkoutCmd,

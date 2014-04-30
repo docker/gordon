@@ -424,6 +424,15 @@ func (m *MaintainerManager) PatchPullRequest(number string, pr *gh.PullRequest) 
 	return &patchedPR, nil
 }
 
+func (m *MaintainerManager) Close(number string) error {
+	_, err := m.client.PatchIssue(
+		m.repo,
+		number,
+		&gh.Options{Params: map[string]string{"state": "closed"}},
+	)
+	return err
+}
+
 func (m *MaintainerManager) GetFirstIssue(state, sortBy string) (*gh.Issue, error) {
 	o := &gh.Options{}
 	o.QueryParams = map[string]string{

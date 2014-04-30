@@ -76,14 +76,14 @@ func getMaintainersFromFile(dir string) (map[string][]string, error) {
 			continue
 		}
 		m := parseMaintainer(t)
-		if m.Email == "" || m.Username == "" {
+		if m.Email == "" {
 			return nil, fmt.Errorf("invalid maintainer file format %s in %s", t, maintainerFile)
 		}
 		target := m.Target
 		if target == "" {
 			target = "*"
 		}
-		maintainer[m.Username] = append(maintainer[m.Username], target)
+		maintainer[m.Email] = append(maintainer[m.Email], target)
 	}
 	return maintainer, nil
 }

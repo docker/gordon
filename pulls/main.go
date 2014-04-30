@@ -68,8 +68,7 @@ func repositoryInfoCmd(c *cli.Context) {
 
 func mergeCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		fmt.Println("Please enter a pull request number")
-		return
+		gordon.WriteError("usage: merge ID")
 	}
 	number := c.Args()[0]
 	merge, err := m.MergePullRequest(number, c.String("m"), c.Bool("force"))
@@ -85,8 +84,7 @@ func mergeCmd(c *cli.Context) {
 
 func checkoutCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		fmt.Println("Please enter a pull request number")
-		return
+		gordon.WriteError("usage: checkout ID")
 	}
 	number := c.Args()[0]
 	pr, _, err := m.GetPullRequest(number, false)
@@ -101,8 +99,7 @@ func checkoutCmd(c *cli.Context) {
 // Approve a pr by adding a LGTM to the comments
 func approveCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		fmt.Println("Please enter a pull request number")
-		return
+		gordon.WriteError("usage: approve ID")
 	}
 	number := c.Args().First()
 	if _, err := m.AddComment(number, "LGTM"); err != nil {
@@ -114,8 +111,7 @@ func approveCmd(c *cli.Context) {
 // Show the patch in a PR
 func showCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		fmt.Println("Please enter a pull request number")
-		return
+		gordon.WriteError("usage: show ID")
 	}
 	number := c.Args()[0]
 	pr, _, err := m.GetPullRequest(number, false)
@@ -145,8 +141,7 @@ func contributorsCmd(c *cli.Context) {
 // Show the reviewers for this pull request
 func reviewersCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		fmt.Println("Please enter a pull request number")
-		return
+		gordon.WriteError("usage: reviewers ID")
 	}
 
 	var (
@@ -251,58 +246,55 @@ func authCmd(c *cli.Context) {
 // If it's taken, show a message with the "--steal" optional flag.
 //If the user doesn't have permissions, add a comment #volunteer
 func takeCmd(c *cli.Context) {
-	if c.Args().Present() {
-		number := c.Args()[0]
-		pr, _, err := m.GetPullRequest(number, false)
-		if err != nil {
-			gordon.WriteError("%s", err)
-		}
-		user, err := m.GetGithubUser()
-		if err != nil {
-			gordon.WriteError("%s", err)
-		}
-		if pr.Assignee != nil && !c.Bool("overwrite") {
-			gordon.WriteError("Use --steal to steal the PR from %s", pr.Assignee.Login)
-		}
-		pr.Assignee = user
-		patchedPR, err := m.PatchPullRequest(number, pr)
-		if err != nil {
-			gordon.WriteError("%s", err)
-		}
-		if patchedPR.Assignee.Login != user.Login {
-			m.AddComment(number, "#volunteer")
-			fmt.Printf("No permission to assign. You '%s' was added as #volunteer.\n", user.Login)
-		} else {
-			fmt.Printf("Assigned PR %s to %s\n", brush.Green(number), patchedPR.Assignee.Login)
-		}
+	if !c.Args().Present() {
+		gordon.WriteError("usage: take ID")
+	}
+	number := c.Args()[0]
+	pr, _, err := m.GetPullRequest(number, false)
+	if err != nil {
+		gordon.WriteError("%s", err)
+	}
+	user, err := m.GetGithubUser()
+	if err != nil {
+		gordon.WriteError("%s", err)
+	}
+	if pr.Assignee != nil && !c.Bool("overwrite") {
+		gordon.WriteError("Use --steal to steal the PR from %s", pr.Assignee.Login)
+	}
+	pr.Assignee = user
+	patchedPR, err := m.PatchPullRequest(number, pr)
+	if err != nil {
+		gordon.WriteError("%s", err)
+	}
+	if patchedPR.Assignee.Login != user.Login {
+		m.AddComment(number, "#volunteer")
+		fmt.Printf("No permission to assign. You '%s' was added as #volunteer.\n", user.Login)
 	} else {
-		gordon.WriteError("Please enter the issue's number")
+		fmt.Printf("Assigned PR %s to %s\n", brush.Green(number), patchedPR.Assignee.Login)
 	}
 }
 
 func dropCmd(c *cli.Context) {
-	if c.Args().Present() {
-		number := c.Args()[0]
-		pr, _, err := m.GetPullRequest(number, false)
-		if err != nil {
-			gordon.WriteError("%s", err)
-		}
-		user, err := m.GetGithubUser()
-		if err != nil {
-			gordon.WriteError("%s", err)
-		}
-		if pr.Assignee == nil || pr.Assignee.Login != user.Login {
-			gordon.WriteError("Can't drop %s: it's not yours.", number)
-		}
-		pr.Assignee = nil
-		if _, err := m.PatchPullRequest(number, pr); err != nil {
-			gordon.WriteError("%s", err)
-		}
-		fmt.Printf("Unassigned PR %s\n", brush.Green(number))
-
-	} else {
-		gordon.WriteError("Please enter the issue's number")
+	if !c.Args().Present() {
+		gordon.WriteError("usage: drop ID")
 	}
+	number := c.Args()[0]
+	pr, _, err := m.GetPullRequest(number, false)
+	if err != nil {
+		gordon.WriteError("%s", err)
+	}
+	user, err := m.GetGithubUser()
+	if err != nil {
+		gordon.WriteError("%s", err)
+	}
+	if pr.Assignee == nil || pr.Assignee.Login != user.Login {
+		gordon.WriteError("Can't drop %s: it's not yours.", number)
+	}
+	pr.Assignee = nil
+	if _, err := m.PatchPullRequest(number, pr); err != nil {
+		gordon.WriteError("%s", err)
+	}
+	fmt.Printf("Unassigned PR %s\n", brush.Green(number))
 }
 
 func commentCmd(c *cli.Context) {

@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/aybabtme/color/brush"
@@ -300,6 +302,36 @@ func dropCmd(c *cli.Context) {
 
 	} else {
 		gordon.WriteError("Please enter the issue's number")
+	}
+}
+
+func commentCmd(c *cli.Context) {
+	if !c.Args().Present() {
+		gordon.WriteError("Please enter the issue's number")
+	}
+	number := c.Args()[0]
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		editor = "nano"
+	}
+	tmp, err := ioutil.TempFile("", "pulls-comment-")
+	if err != nil {
+		gordon.WriteError("%s", err)
+	}
+	defer os.Remove(tmp.Name())
+	cmd := exec.Command(editor, tmp.Name())
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		gordon.WriteError("%v", err)
+	}
+	comment, err := ioutil.ReadAll(tmp)
+	if err != nil {
+		gordon.WriteError("%v", err)
+	}
+	if _, err := m.AddComment(number, string(comment)); err != nil {
+		gordon.WriteError("%v", err)
 	}
 }
 

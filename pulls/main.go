@@ -263,7 +263,7 @@ func takeCmd(c *cli.Context) {
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}
-	if pr.Assignee != nil && !c.Bool("overwrite") {
+	if pr.Assignee != nil && !c.Bool("steal") {
 		gordon.Fatalf("Use --steal to steal the PR from %s", pr.Assignee.Login)
 	}
 	pr.Assignee = user

@@ -15,6 +15,7 @@ func loadCommands(app *cli.App) {
 		cli.StringFlag{"state", "open", "display prs based on their state"},
 		cli.BoolFlag{"new", "display prs opened in the last 24 hours"},
 		cli.BoolFlag{"mine", "display only PRs I care about based on the MAINTAINERS files"},
+		cli.StringFlag{"maintainer", "", "display only PRs a maintainer cares about based on the MAINTAINERS files"},
 		cli.StringFlag{"sort", "updated", "sort the prs by (created, updated, popularity, long-running)"},
 		cli.StringFlag{"assigned", "", "display only prs assigned to a user"},
 		cli.BoolFlag{"unassigned", "display only unassigned prs"},
@@ -66,8 +67,7 @@ func loadCommands(app *cli.App) {
 			Name:   "close",
 			Usage:  "Close a pull request without merging it",
 			Action: closeCmd,
-			Flags: []cli.Flag{
-			},
+			Flags:  []cli.Flag{},
 		},
 		{
 			Name:   "checkout",

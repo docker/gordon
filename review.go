@@ -2,7 +2,6 @@ package gordon
 
 import (
 	"bufio"
-	"code.google.com/p/go.codereview/patch"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,7 +10,22 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"code.google.com/p/go.codereview/patch"
 )
+
+func GetReviewersForPR(patch io.Reader) (map[string][]string, error) {
+	toplevel, err := GetTopLevelGitRepo()
+	if err != nil {
+		return nil, err
+	}
+	maintainers, err := GetMaintainersFromRepo(toplevel)
+	if err != nil {
+		return nil, err
+	}
+
+	return ReviewPatch(patch, maintainers)
+}
 
 // ReviewPatch reads a git-formatted patch from `src`, and for each file affected by the patch
 // it assign its Maintainers based on the current repository tree directories

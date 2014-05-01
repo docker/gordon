@@ -75,6 +75,11 @@ func loadCommands(app *cli.App) {
 			Action: checkoutCmd,
 		},
 		{
+			Name:   "send",
+			Usage:  "Send a new pull request, or overwrite an existing one",
+			Action: sendCmd,
+		},
+		{
 			Name:   "approve",
 			Usage:  "Approve a pull request by adding LGTM to the comments",
 			Action: approveCmd,

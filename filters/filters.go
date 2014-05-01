@@ -2,6 +2,7 @@ package filters
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -13,9 +14,13 @@ import (
 
 func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullRequest, error) {
 	var (
-		yesterday = time.Now().Add(-24 * time.Hour)
-		out       = []*gh.PullRequest{}
+		yesterday  = time.Now().Add(-24 * time.Hour)
+		out        = []*gh.PullRequest{}
+		email, err = gordon.GetMaintainerManagerEmail()
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, pr := range prs {
 		fmt.Printf(".")
@@ -28,6 +33,34 @@ func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullReques
 			if pr.User.Login != user {
 				continue
 			}
+		}
+
+		if maintainer := c.String("maintainer"); maintainer != "" || c.Bool("mine") {
+			if maintainer == "" {
+				maintainer = email
+			}
+
+			var found bool
+			resp, err := http.Get(pr.DiffURL)
+			if err != nil {
+				continue
+			}
+			reviewers, err := gordon.GetReviewersForPR(resp.Body)
+			resp.Body.Close()
+			if err != nil {
+				continue
+			}
+			for file := range reviewers {
+				for _, reviewer := range reviewers[file] {
+					if reviewer == maintainer {
+						found = true
+					}
+				}
+			}
+			if !found {
+				continue
+			}
+
 		}
 
 		if c.Bool("unassigned") && pr.Assignee != nil {

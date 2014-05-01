@@ -20,12 +20,25 @@ var (
 	m *gordon.MaintainerManager
 )
 
-func displayAllPullRequests(c *cli.Context, state string, showAll bool) {
-	var prs, err = m.GetPullRequestsThatICareAbout(showAll, state, c.String("sort"))
-
+func displayAllPullRequests(c *cli.Context) {
+	prs, err := m.GetPullRequests(c.String("state"), c.String("sort"))
 	if err != nil {
 		gordon.Fatalf("Error getting pull requests %s", err)
 	}
+
+	var needFullPr, needComments bool
+
+	if c.Bool("no-merge") {
+		needFullPr = true
+	}
+	if c.Bool("lgtm") {
+		needComments = true
+	}
+
+	if needFullPr || needComments {
+		prs = m.GetFullPullRequests(prs, needFullPr, needComments)
+	}
+
 	prs, err = filters.FilterPullRequests(c, prs)
 	if err != nil {
 		gordon.Fatalf("Error filtering pull requests %s", err)
@@ -91,7 +104,7 @@ func checkoutCmd(c *cli.Context) {
 		gordon.Fatalf("usage: checkout ID")
 	}
 	number := c.Args()[0]
-	pr, _, err := m.GetPullRequest(number, false)
+	pr, err := m.GetPullRequest(number)
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}
@@ -118,7 +131,7 @@ func showCmd(c *cli.Context) {
 		gordon.Fatalf("usage: show ID")
 	}
 	number := c.Args()[0]
-	pr, _, err := m.GetPullRequest(number, false)
+	pr, err := m.GetPullRequest(number)
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}
@@ -156,7 +169,7 @@ func reviewersCmd(c *cli.Context) {
 	if number == "-" {
 		patch = os.Stdin
 	} else {
-		pr, _, err := m.GetPullRequest(number, false)
+		pr, err := m.GetPullRequest(number)
 		if err != nil {
 			gordon.Fatalf("%s", err)
 		}
@@ -189,15 +202,7 @@ func reviewersCmd(c *cli.Context) {
 // working with prs
 func mainCmd(c *cli.Context) {
 	if !c.Args().Present() {
-		var (
-			state   = c.String("state")
-			showAll = true // default to true so that we get the fast path
-		)
-		switch {
-		case c.Bool("no-merge"), c.Bool("lgtm"), c.Bool("new"), c.Bool("mine"):
-			showAll = false
-		}
-		displayAllPullRequests(c, state, showAll)
+		displayAllPullRequests(c)
 		return
 	}
 
@@ -210,11 +215,12 @@ func mainCmd(c *cli.Context) {
 		addComment(number, comment)
 		return
 	}
-	pr, comments, err := m.GetPullRequest(number, true)
+	pr, err := m.GetPullRequest(number)
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}
-	gordon.DisplayPullRequest(pr, comments)
+	pr.CommentsBody, err = m.GetComments(number)
+	gordon.DisplayPullRequest(pr)
 }
 
 func authCmd(c *cli.Context) {
@@ -258,7 +264,7 @@ func takeCmd(c *cli.Context) {
 		gordon.Fatalf("usage: take ID")
 	}
 	number := c.Args()[0]
-	pr, _, err := m.GetPullRequest(number, false)
+	pr, err := m.GetPullRequest(number)
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}
@@ -288,7 +294,7 @@ func dropCmd(c *cli.Context) {
 		gordon.Fatalf("usage: drop ID")
 	}
 	number := c.Args()[0]
-	pr, _, err := m.GetPullRequest(number, false)
+	pr, err := m.GetPullRequest(number)
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}

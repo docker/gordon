@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/codegangsta/cli"
-	gh "github.com/crosbymichael/octokat"
 	"io"
 	"os"
 	"sort"
@@ -13,6 +11,9 @@ import (
 	"strings"
 	"text/tabwriter"
 	"time"
+
+	"github.com/codegangsta/cli"
+	gh "github.com/crosbymichael/octokat"
 )
 
 const (
@@ -126,7 +127,7 @@ func DisplayContributors(c *cli.Context, contributors []*gh.Contributor) {
 	}
 }
 
-func DisplayPullRequest(pr *gh.PullRequest, comments []gh.Comment) {
+func DisplayPullRequest(pr *gh.PullRequest) {
 	fmt.Fprint(os.Stdout, fmt.Sprintf("Pull Request from: %s", Green("@"+pr.User.Login)), "\n")
 	fmt.Printf("No: %d\nTitle: %s\n", pr.Number, pr.Title)
 
@@ -149,7 +150,7 @@ func DisplayPullRequest(pr *gh.PullRequest, comments []gh.Comment) {
 	fmt.Printf("Description:\n\n%s\n\n", strings.Join(lines, "\n"))
 	fmt.Printf("\n\n")
 
-	DisplayComments(comments)
+	DisplayComments(pr.CommentsBody)
 }
 
 func DisplayComments(comments []gh.Comment) {

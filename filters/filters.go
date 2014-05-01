@@ -13,18 +13,9 @@ import (
 
 func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullRequest, error) {
 	var (
-		yesterday      = time.Now().Add(-24 * time.Hour)
-		out            = []*gh.PullRequest{}
-		client         = gh.NewClient()
-		org, name, err = gordon.GetOriginUrl()
+		yesterday = time.Now().Add(-24 * time.Hour)
+		out       = []*gh.PullRequest{}
 	)
-	if err != nil {
-		return nil, err
-	}
-	t, err := gordon.NewMaintainerManager(client, org, name)
-	if err != nil {
-		return nil, err
-	}
 
 	for _, pr := range prs {
 		fmt.Printf(".")
@@ -46,32 +37,21 @@ func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullReques
 		}
 
 		if c.Bool("lgtm") {
-			comments, err := t.GetComments(strconv.Itoa(pr.Number))
-			if err != nil {
-				return nil, err
-			}
 			pr.ReviewComments = 0
 			maintainersOccurrence := map[string]bool{}
-			for _, comment := range comments {
+			for _, comment := range pr.CommentsBody {
 				// We should check it this LGTM is by a user in
 				// the maintainers file
 				userName := comment.User.Login
-				if strings.Contains(comment.Body, "LGTM") && t.IsMaintainer(userName) && !maintainersOccurrence[userName] {
+				if strings.Contains(comment.Body, "LGTM") && !maintainersOccurrence[userName] {
 					maintainersOccurrence[userName] = true
 					pr.ReviewComments += 1
 				}
 			}
 		}
 
-		if c.Bool("no-merge") {
-			pr, _, err := t.GetPullRequest(strconv.Itoa(pr.Number), false)
-			if err != nil {
-				return nil, err
-			}
-			if pr.Mergeable {
-				continue
-			}
-
+		if c.Bool("no-merge") && pr.Mergeable {
+			continue
 		}
 
 		out = append(out, pr)

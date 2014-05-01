@@ -3,12 +3,13 @@ package gordon
 import (
 	"encoding/json"
 	"fmt"
-	gh "github.com/crosbymichael/octokat"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 	"sync"
+
+	gh "github.com/crosbymichael/octokat"
 )
 
 // Top level type that manages a repository
@@ -122,24 +123,29 @@ func (m *MaintainerManager) Repository() (*gh.Repository, error) {
 	return m.client.Repository(m.repo, nil)
 }
 
-func (m *MaintainerManager) IsMaintainer(username string) bool {
-	return true
-}
-
-func (m *MaintainerManager) worker(prepr <-chan *gh.PullRequest, pospr chan<- *gh.PullRequest, wg *sync.WaitGroup) {
+func (m *MaintainerManager) worker(prepr <-chan *gh.PullRequest, pospr chan<- *gh.PullRequest, wg *sync.WaitGroup, needFullPr, needComments bool) {
+	var err error
 	defer wg.Done()
 
 	for p := range prepr {
-		pr, _, err := m.GetPullRequest(strconv.Itoa(p.Number), false)
-		if err != nil {
-			return
+		if needFullPr {
+			p, err = m.GetPullRequest(strconv.Itoa(p.Number))
+			if err != nil {
+				return
+			}
 		}
-		pospr <- pr
+		if needComments {
+			p.CommentsBody, err = m.GetComments(strconv.Itoa(p.Number))
+			if err != nil {
+				return
+			}
+		}
+		pospr <- p
 		fmt.Printf(".")
 	}
 }
 
-func (m *MaintainerManager) filterPullRequests(prs []*gh.PullRequest) []*gh.PullRequest {
+func (m *MaintainerManager) GetFullPullRequests(prs []*gh.PullRequest, needFullPr, needComments bool) []*gh.PullRequest {
 	var (
 		producer      = make(chan *gh.PullRequest, NumWorkers)
 		consumer      = make(chan *gh.PullRequest, NumWorkers)
@@ -154,13 +160,13 @@ func (m *MaintainerManager) filterPullRequests(prs []*gh.PullRequest) []*gh.Pull
 		defer consumerGroup.Done()
 
 		for p := range consumer {
-			filteredPrs = append(filteredPrs, []*gh.PullRequest{p}...)
+			filteredPrs = append(filteredPrs, p)
 		}
 	}()
 
 	for i := 0; i < NumWorkers; i++ {
 		wg.Add(1)
-		go m.worker(producer, consumer, wg)
+		go m.worker(producer, consumer, wg, needFullPr, needComments)
 	}
 
 	// add all jobs
@@ -177,20 +183,6 @@ func (m *MaintainerManager) filterPullRequests(prs []*gh.PullRequest) []*gh.Pull
 	consumerGroup.Wait()
 
 	return filteredPrs
-}
-
-// Return all the pull requests that I care about
-func (m *MaintainerManager) GetPullRequestsThatICareAbout(showAll bool, state, sortQuery string) ([]*gh.PullRequest, error) {
-	prs, err := m.GetPullRequests(state, sortQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	if showAll {
-		return prs, nil
-	}
-
-	return m.filterPullRequests(prs), nil
 }
 
 // Return all pull requests
@@ -254,20 +246,8 @@ func (m *MaintainerManager) GetFirstPullRequest(state, sortBy string) (*gh.PullR
 }
 
 // Return a single pull request
-// Return pr's comments if requested
-func (m *MaintainerManager) GetPullRequest(number string, comments bool) (*gh.PullRequest, []gh.Comment, error) {
-	var c []gh.Comment
-	pr, err := m.client.PullRequest(m.repo, number, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	if comments {
-		c, err = m.GetComments(number)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-	return pr, c, nil
+func (m *MaintainerManager) GetPullRequest(number string) (*gh.PullRequest, error) {
+	return m.client.PullRequest(m.repo, number, nil)
 }
 
 // Return a single issue

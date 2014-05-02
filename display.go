@@ -34,7 +34,7 @@ func truncate(s string) string {
 
 func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) {
 	w := newTabwriter()
-	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tCONTRIBUTOR\tASSIGNEE\tTITLE")
+	fmt.Fprintf(w, "NUMBER\tSHA\tLAST UPDATED\tCONTRIBUTOR\tASSIGNEE\tTITLE")
 	if c.Bool("lgtm") {
 		fmt.Fprintf(w, "\tLGTM")
 	}
@@ -47,7 +47,7 @@ func DisplayPullRequests(c *cli.Context, pulls []*gh.PullRequest, notrunc bool) 
 		if p.Assignee != nil {
 			assignee = p.Assignee.Login
 		}
-		fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s", p.Number, HumanDuration(time.Since(p.UpdatedAt)), p.User.Login, assignee, p.Title)
+		fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\t%s", p.Number, p.Head.Sha[:8], HumanDuration(time.Since(p.UpdatedAt)), p.User.Login, assignee, p.Title)
 		if c.Bool("lgtm") {
 			lgtm := strconv.Itoa(p.ReviewComments)
 			if p.ReviewComments >= 2 {
@@ -129,7 +129,7 @@ func DisplayContributors(c *cli.Context, contributors []*gh.Contributor) {
 
 func DisplayPullRequest(pr *gh.PullRequest) {
 	fmt.Fprint(os.Stdout, fmt.Sprintf("Pull Request from: %s", Green("@"+pr.User.Login)), "\n")
-	fmt.Printf("No: %d\nTitle: %s\n", pr.Number, pr.Title)
+	fmt.Printf("No: %d\nSha: %s\nTitle: %s\n", pr.Number, pr.Head.Sha, pr.Title)
 
 	if pr.Merged {
 		fmt.Fprintf(os.Stdout, "\nMerged by: %s\nMerged at: %s\nMerge Commit: %s\n\n", Yellow("@"+pr.MergedBy.Login), Yellow(pr.MergedAt.Format(time.RubyDate)), Yellow(pr.MergeCommitSha))

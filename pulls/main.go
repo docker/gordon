@@ -210,8 +210,18 @@ func mainCmd(c *cli.Context) {
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}
-	pr.CommentsBody, err = m.GetComments(number)
 	gordon.DisplayPullRequest(pr)
+}
+
+func commentsCmd(c *cli.Context) {
+	if !c.Args().Present() {
+		gordon.Fatalf("usage: comments ID")
+	}
+	comments, err := m.GetComments(c.Args().First())
+	if err != nil {
+		gordon.Fatalf("%s", err)
+	}
+	gordon.DisplayComments(comments)
 }
 
 func authCmd(c *cli.Context) {

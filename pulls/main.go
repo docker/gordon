@@ -415,7 +415,7 @@ func main() {
 	}
 	t, err := gordon.NewMaintainerManager(client, org, name)
 	if err != nil {
-		gordon.Fatalf("%s", err)
+		gordon.Fatalf("init: %s", err)
 	}
 	m = t
 

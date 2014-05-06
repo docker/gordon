@@ -105,11 +105,11 @@ func NewMaintainerManager(client *gh.Client, org, repo string) (*MaintainerManag
 	}
 	originPath, err := getOriginPath(repo)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getoriginpath: %v", err)
 	}
 	email, err := GetMaintainerManagerEmail()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getemail: %v", err)
 	}
 	return &MaintainerManager{
 		repo:       gh.Repo{Name: repo, UserName: org},

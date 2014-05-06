@@ -41,6 +41,11 @@ func loadCommands(app *cli.App) {
 			Action: commentCmd,
 		},
 		{
+			Name:   "comments",
+			Usage:  "Show comments on a pull request",
+			Action: commentsCmd,
+		},
+		{
 			Name:   "auth",
 			Usage:  "Add a github token for authentication",
 			Action: authCmd,

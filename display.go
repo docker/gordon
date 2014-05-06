@@ -149,8 +149,6 @@ func DisplayPullRequest(pr *gh.PullRequest) {
 	}
 	fmt.Printf("Description:\n\n%s\n\n", strings.Join(lines, "\n"))
 	fmt.Printf("\n\n")
-
-	DisplayComments(pr.CommentsBody)
 }
 
 func DisplayComments(comments []gh.Comment) {

@@ -47,7 +47,7 @@ func takeCmd(c *cli.Context) {
 			gordon.Fatalf("%s", err)
 		}
 		if issue.Assignee.Login != "" && !c.Bool("overwrite") {
-			fmt.Printf("Use the flag --overwrite to take the issue from %s", issue.Assignee.Login)
+			fmt.Printf("Use the flag --overwrite to take the issue from %s\n", issue.Assignee.Login)
 			return
 		}
 		issue.Assignee = *user
@@ -57,12 +57,12 @@ func takeCmd(c *cli.Context) {
 		}
 		if patchedIssue.Assignee.Login != user.Login {
 			m.AddComment(number, "#volunteer")
-			fmt.Printf("No permission to assign. You '%s' was added as #volunteer.", user.Login)
+			fmt.Printf("No permission to assign. You '%s' was added as #volunteer.\n", user.Login)
 		} else {
-			fmt.Printf("The issue %s was assigned to %s", number, patchedIssue.Assignee.Login)
+			fmt.Printf("The issue %s was assigned to %s\n", number, patchedIssue.Assignee.Login)
 		}
 	} else {
-		fmt.Printf("Please enter the issue's number")
+		fmt.Printf("Please enter the issue's number\n")
 	}
 
 }
@@ -109,7 +109,7 @@ func searchCmd(c *cli.Context) {
 		fmt.Printf("%c[2K\r", 27)
 		gordon.DisplayIssues(c, issues, c.Bool("no-trunc"))
 	} else {
-		fmt.Printf("Please enter a search term")
+		fmt.Printf("Please enter a search term\n")
 	}
 
 }

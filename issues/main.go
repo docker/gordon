@@ -124,20 +124,6 @@ func addComment(number, comment string) {
 }
 
 func mainCmd(c *cli.Context) {
-	client := gh.NewClient()
-
-	org, name, err := gordon.GetRemoteUrl(c.String("remote"))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "The current directory is not a valid git repository.\n")
-		os.Exit(1)
-	}
-	fmt.Println(org, name)
-	t, err := gordon.NewMaintainerManager(client, org, name)
-	if err != nil {
-		panic(err)
-	}
-	m = t
-
 	if !c.Args().Present() {
 		var issues, err = m.GetIssues("open", c.String("assigned"))
 
@@ -210,6 +196,21 @@ func authCmd(c *cli.Context) {
 	}
 }
 
+func before(c *cli.Context) error {
+	client := gh.NewClient()
+
+	org, name, err := gordon.GetRemoteUrl(c.String("remote"))
+	if err != nil {
+		return fmt.Errorf("The current directory is not a valid git repository (%s).\n", err)
+	}
+	t, err := gordon.NewMaintainerManager(client, org, name)
+	if err != nil {
+		return err
+	}
+	m = t
+	return nil
+}
+
 func main() {
 	app := cli.NewApp()
 
@@ -217,6 +218,7 @@ func main() {
 	app.Usage = "Manage github issues"
 	app.Version = "0.0.1"
 
+	app.Before = before
 	loadCommands(app)
 
 	app.Run(os.Args)

@@ -192,6 +192,19 @@ func reviewersCmd(c *cli.Context) {
 // This is the top level command for
 // working with prs
 func mainCmd(c *cli.Context) {
+	client := gh.NewClient()
+
+	org, name, err := gordon.GetRemoteUrl(c.String("remote"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "The current directory is not a valid git repository.\n")
+		os.Exit(1)
+	}
+	t, err := gordon.NewMaintainerManager(client, org, name)
+	if err != nil {
+		gordon.Fatalf("init: %s", err)
+	}
+	m = t
+
 	if !c.Args().Present() {
 		displayAllPullRequests(c)
 		return
@@ -405,19 +418,6 @@ func main() {
 	app.Name = "pulls"
 	app.Usage = "Manage github pull requests for project maintainers"
 	app.Version = "0.0.1"
-
-	client := gh.NewClient()
-
-	org, name, err := gordon.GetOriginUrl()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "The current directory is not a valid git repository.\n")
-		os.Exit(1)
-	}
-	t, err := gordon.NewMaintainerManager(client, org, name)
-	if err != nil {
-		gordon.Fatalf("init: %s", err)
-	}
-	m = t
 
 	loadCommands(app)
 

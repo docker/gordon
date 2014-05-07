@@ -23,12 +23,16 @@ func Fatalf(format string, args ...interface{}) {
 }
 
 func GetOriginUrl() (string, string, error) {
+	return GetRemoteUrl("origin")
+}
+
+func GetRemoteUrl(remote string) (string, string, error) {
 	remotes, err := getRemotes()
 	if err != nil {
 		return "", "", err
 	}
 	for _, r := range remotes {
-		if r.Name == "origin" {
+		if r.Name == remote {
 			parts := strings.Split(r.Url, "/")
 
 			org := parts[len(parts)-2]

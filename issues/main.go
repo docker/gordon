@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	m          *gordon.MaintainerManager
-	configPath = path.Join(os.Getenv("HOME"), ".maintainercfg")
+	m             *gordon.MaintainerManager
+	remote_origin = "origin"
+	configPath    = path.Join(os.Getenv("HOME"), ".maintainercfg")
 )
 
 func alruCmd(c *cli.Context) {
@@ -123,6 +124,20 @@ func addComment(number, comment string) {
 }
 
 func mainCmd(c *cli.Context) {
+	client := gh.NewClient()
+
+	org, name, err := gordon.GetRemoteUrl(c.String("remote"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "The current directory is not a valid git repository.\n")
+		os.Exit(1)
+	}
+	fmt.Println(org, name)
+	t, err := gordon.NewMaintainerManager(client, org, name)
+	if err != nil {
+		panic(err)
+	}
+	m = t
+
 	if !c.Args().Present() {
 		var issues, err = m.GetIssues("open", c.String("assigned"))
 
@@ -201,19 +216,6 @@ func main() {
 	app.Name = "issues"
 	app.Usage = "Manage github issues"
 	app.Version = "0.0.1"
-
-	client := gh.NewClient()
-
-	org, name, err := gordon.GetOriginUrl()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "The current directory is not a valid git repository.\n")
-		os.Exit(1)
-	}
-	t, err := gordon.NewMaintainerManager(client, org, name)
-	if err != nil {
-		panic(err)
-	}
-	m = t
 
 	loadCommands(app)
 

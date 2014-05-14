@@ -14,12 +14,12 @@ import (
 	"code.google.com/p/go.codereview/patch"
 )
 
-func GetReviewersForPR(patch io.Reader) (map[string][]string, error) {
+func GetReviewersForPR(patch io.Reader, withUsername bool) (map[string][]string, error) {
 	toplevel, err := GetTopLevelGitRepo()
 	if err != nil {
 		return nil, err
 	}
-	maintainers, err := GetMaintainersFromRepo(toplevel)
+	maintainers, err := GetMaintainersFromRepo(toplevel, withUsername)
 	if err != nil {
 		return nil, err
 	}

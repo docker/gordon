@@ -115,6 +115,10 @@ func FilterIssues(c *cli.Context, issues []*gh.Issue) ([]*gh.Issue, error) {
 			continue
 		}
 
+		if milestone := c.String("milestone"); milestone != "" && issue.Milestone.Title != milestone {
+			continue
+		}
+
 		if numVotes := c.Int("votes"); numVotes > 0 {
 			comments, err := t.GetComments(strconv.Itoa(issue.Number))
 			if err != nil {

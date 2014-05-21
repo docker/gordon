@@ -13,7 +13,7 @@ func init() {
 	}
 }
 
-func Green(s string) string{
+func Green(s string) string {
 	if Colorize {
 		return brush.Green(s).String()
 	}

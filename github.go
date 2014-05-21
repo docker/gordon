@@ -387,10 +387,10 @@ func (m *MaintainerManager) CreatePullRequest(base, head, title, body string) (*
 		m.repo,
 		&gh.Options{
 			Params: map[string]string{
-				"title":	title,
-				"head":		head,
-				"base":		base,
-				"body":		body,
+				"title": title,
+				"head":  head,
+				"base":  base,
+				"body":  body,
 			},
 		},
 	)
@@ -494,4 +494,3 @@ func GenBranchName(text string) string {
 	branchName = toUnderscore.ReplaceAllString(branchName, "_")
 	return branchName
 }
-

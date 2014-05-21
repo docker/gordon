@@ -67,6 +67,17 @@ func takeCmd(c *cli.Context) {
 
 }
 
+func closeCmd(c *cli.Context) {
+	if !c.Args().Present() {
+		gordon.Fatalf("Please enter the issue's number")
+	}
+	number := c.Args()[0]
+	if err := m.Close(number); err != nil {
+		gordon.Fatalf("%v", err)
+	}
+	fmt.Printf("Closed issue %s\n", number)
+}
+
 func buildQuery(c *cli.Context) string {
 	r, err := m.Repository()
 	if err != nil {

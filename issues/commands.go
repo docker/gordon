@@ -34,6 +34,12 @@ func loadCommands(app *cli.App) {
 			},
 		},
 		{
+			Name:   "close",
+			Usage:  "Close a pull request without merging it",
+			Action: closeCmd,
+			Flags:  []cli.Flag{},
+		},
+		{
 			Name:   "search",
 			Usage:  "Find issues by state and keyword.",
 			Action: searchCmd,

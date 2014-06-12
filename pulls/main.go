@@ -182,7 +182,7 @@ func reviewersCmd(c *cli.Context) {
 		defer resp.Body.Close()
 	}
 
-	reviewers, err := gordon.GetReviewersForPR(patch)
+	reviewers, err := gordon.GetReviewersForPR(patch, false)
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}

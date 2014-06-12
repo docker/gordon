@@ -15,17 +15,17 @@ const (
 
 // GetMaintainersFromRepo returns the maintainers for a repo with the username
 // as the key and the file's that they own as a slice in the value
-func GetMaintainersFromRepo(repoPath string) (map[string][]string, error) {
+func GetMaintainersFromRepo(repoPath string, withUsername bool) (map[string][]string, error) {
 	current := make(map[string][]string)
 
-	if err := getMaintainersForDirectory(repoPath, repoPath, current); err != nil {
+	if err := getMaintainersForDirectory(repoPath, repoPath, current, withUsername); err != nil {
 		return nil, err
 	}
 	return current, nil
 }
 
-func getMaintainersForDirectory(root, dir string, current map[string][]string) error {
-	maintainersPerFile, err := getMaintainersFromFile(dir)
+func getMaintainersForDirectory(root, dir string, current map[string][]string, withUsername bool) error {
+	maintainersPerFile, err := getMaintainersFromFile(dir, withUsername)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
@@ -47,7 +47,7 @@ func getMaintainersForDirectory(root, dir string, current map[string][]string) e
 
 	for _, fi := range contents {
 		if fi.IsDir() && fi.Name() != ".git" {
-			if err := getMaintainersForDirectory(root, filepath.Join(dir, fi.Name()), current); err != nil {
+			if err := getMaintainersForDirectory(root, filepath.Join(dir, fi.Name()), current, withUsername); err != nil {
 				return err
 			}
 		}
@@ -55,7 +55,7 @@ func getMaintainersForDirectory(root, dir string, current map[string][]string) e
 	return nil
 }
 
-func getMaintainersFromFile(dir string) (map[string][]string, error) {
+func getMaintainersFromFile(dir string, withUsername bool) (map[string][]string, error) {
 	maintainerFile := filepath.Join(dir, MaintainerFileName)
 	f, err := os.Open(maintainerFile)
 	if err != nil {
@@ -84,6 +84,9 @@ func getMaintainersFromFile(dir string) (map[string][]string, error) {
 			target = "*"
 		}
 		maintainer[m.Email] = append(maintainer[m.Email], target)
+		if withUsername {
+			maintainer[m.Username] = append(maintainer[m.Username], target)
+		}
 	}
 	return maintainer, nil
 }

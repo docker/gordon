@@ -45,7 +45,7 @@ func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullReques
 			if err != nil {
 				continue
 			}
-			reviewers, err := gordon.GetReviewersForPR(resp.Body)
+			reviewers, err := gordon.GetReviewersForPR(resp.Body, true)
 			resp.Body.Close()
 			if err != nil {
 				continue

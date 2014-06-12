@@ -163,8 +163,8 @@ func DisplayCommentAdded(cmt gh.Comment) {
 	fmt.Printf("Comment added at %s\n", cmt.CreatedAt.Format(defaultTimeFormat))
 }
 
-func printIssue(c *cli.Context, w *tabwriter.Writer, number int, updatedAt time.Time, login string, title string, comments int) {
-	fmt.Fprintf(w, "%d\t%s\t%s\t%s", number, HumanDuration(time.Since(updatedAt)), login, title)
+func printIssue(c *cli.Context, w *tabwriter.Writer, number int, updatedAt time.Time, login, milestone, title string, comments int) {
+	fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s", number, HumanDuration(time.Since(updatedAt)), login, milestone, title)
 	if c.Int("votes") > 0 {
 		votes := strconv.Itoa(comments)
 		if comments >= 2 {
@@ -178,7 +178,7 @@ func printIssue(c *cli.Context, w *tabwriter.Writer, number int, updatedAt time.
 // Display Issues prints `issues` to standard output in a human-friendly tabulated format.
 func DisplayIssues(c *cli.Context, v interface{}, notrunc bool) {
 	w := newTabwriter()
-	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tASSIGNEE\tTITLE")
+	fmt.Fprintf(w, "NUMBER\tLAST UPDATED\tASSIGNEE\tMILESTONE\nTITLE")
 	if c.Int("votes") > 0 {
 		fmt.Fprintf(w, "\tVOTES")
 	}
@@ -187,11 +187,11 @@ func DisplayIssues(c *cli.Context, v interface{}, notrunc bool) {
 	switch issues := v.(type) {
 	case []*gh.Issue:
 		for _, p := range issues {
-			printIssue(c, w, p.Number, p.UpdatedAt, p.Assignee.Login, p.Title, p.Comments)
+			printIssue(c, w, p.Number, p.UpdatedAt, p.Assignee.Login, p.Milestone.Title, p.Title, p.Comments)
 		}
 	case []*gh.SearchItem:
 		for _, p := range issues {
-			printIssue(c, w, p.Number, p.UpdatedAt, p.Assignee.Login, p.Title, p.Comments)
+			printIssue(c, w, p.Number, p.UpdatedAt, p.Assignee.Login, p.Milestone.Title, p.Title, p.Comments)
 		}
 	}
 	if err := w.Flush(); err != nil {

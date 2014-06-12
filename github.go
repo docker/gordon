@@ -53,7 +53,7 @@ func LoadConfig() (*Config, error) {
 func SaveConfig(config Config) error {
 	f, err := os.OpenFile(configPath, os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil {
-		return nil
+		return err
 	}
 	defer f.Close()
 
@@ -362,7 +362,7 @@ func (m *MaintainerManager) Checkout(pr *gh.PullRequest) error {
 func (m *MaintainerManager) GetGithubUser() (*gh.User, error) {
 	user, err := m.client.User("", nil)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	return user, err
 }
@@ -377,7 +377,7 @@ func (m *MaintainerManager) PatchIssue(number string, issue *gh.Issue) (*gh.Issu
 	}
 	patchedIssue, err := m.client.PatchIssue(m.repo, number, o)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	return patchedIssue, err
 }
@@ -412,7 +412,7 @@ func (m *MaintainerManager) PatchPullRequest(number string, pr *gh.PullRequest) 
 	// octokat doesn't expose PatchPullRequest. Use PatchIssue instead.
 	_, err := m.client.PatchIssue(m.repo, number, o)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	// Simulate the result of the patching
 	patchedPR := *pr

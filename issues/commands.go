@@ -34,10 +34,11 @@ func loadCommands(app *cli.App) {
 			},
 		},
 		{
-			Name:   "close",
-			Usage:  "Close a pull request without merging it",
-			Action: closeCmd,
-			Flags:  []cli.Flag{},
+			Name:        "close",
+			Usage:       "Close an issue",
+			Description: "Provide the issue number for issue(s) to close for this repository",
+			Action:      closeCmd,
+			Flags:       []cli.Flag{},
 		},
 		{
 			Name:   "search",

@@ -36,6 +36,13 @@ func loadCommands(app *cli.App) {
 			},
 		},
 		{
+			Name:        "close",
+			Usage:       "Close an issue",
+			Description: "Provide the issue number for issue(s) to close for this repository",
+			Action:      closeCmd,
+			Flags:       []cli.Flag{},
+		},
+		{
 			Name:   "search",
 			Usage:  "Find issues by state and keyword.",
 			Action: searchCmd,

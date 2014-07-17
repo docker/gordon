@@ -9,7 +9,7 @@ import (
 
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
-	"github.com/dotcloud/gordon"
+	"github.com/docker/gordon"
 )
 
 func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullRequest, error) {

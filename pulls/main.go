@@ -12,8 +12,8 @@ import (
 	"github.com/aybabtme/color/brush"
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
-	"github.com/dotcloud/gordon"
-	"github.com/dotcloud/gordon/filters"
+	"github.com/docker/gordon"
+	"github.com/docker/gordon/filters"
 )
 
 var (

@@ -424,5 +424,8 @@ func main() {
 	app.Before = before
 	loadCommands(app)
 
-	app.Run(os.Args)
+	err := app.Run(os.Args)
+	if err != nil {
+		gordon.Fatalf(err.Error())
+	}
 }

@@ -210,6 +210,7 @@ func authCmd(c *cli.Context) {
 func before(c *cli.Context) error {
 	client := gh.NewClient()
 
+	// set up the git remote to be used
 	org, name, err := gordon.GetRemoteUrl(c.String("remote"))
 	if err != nil {
 		return fmt.Errorf("The current directory is not a valid git repository (%s).\n", err)
@@ -219,6 +220,10 @@ func before(c *cli.Context) error {
 		return err
 	}
 	m = t
+
+	// Set verbosity
+	gordon.VerboseOutput = c.Bool("verbose")
+
 	return nil
 }
 

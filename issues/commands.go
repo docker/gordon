@@ -13,6 +13,7 @@ func loadCommands(app *cli.App) {
 		cli.StringFlag{Name: "remote", Value: gordon.GetDefaultGitRemote(), Usage: "git remote to treat as origin"},
 		cli.StringFlag{Name: "milestone", Value: "", Usage: "display issues inside a particular <milestone>."},
 		cli.BoolFlag{Name: "no-trunc", Usage: "do not truncate the issue name"},
+		cli.BoolFlag{Name: "verbose", Usage: "show more verbose output on actions"},
 		cli.IntFlag{Name: "votes", Value: -1, Usage: "display the number of votes '+1' filtered by the <number> specified."},
 		cli.BoolFlag{Name: "vote", Usage: "add '+1' to an specific issue."},
 		cli.BoolFlag{Name: "proposals", Usage: "Only show proposal issues"},

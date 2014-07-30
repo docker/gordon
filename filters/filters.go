@@ -135,6 +135,10 @@ func FilterIssues(c *cli.Context, issues []*gh.Issue) ([]*gh.Issue, error) {
 			}
 		}
 
+		if c.Bool("proposals") && !strings.HasPrefix(issue.Title, "Proposal") {
+			continue
+		}
+
 		out = append(out, issue)
 	}
 	return out, nil

@@ -14,6 +14,7 @@ func loadCommands(app *cli.App) {
 		cli.BoolFlag{"no-trunc", "do not truncate the issue name"},
 		cli.IntFlag{"votes", -1, "display the number of votes '+1' filtered by the <number> specified."},
 		cli.BoolFlag{"vote", "add '+1' to an specific issue."},
+		cli.BoolFlag{"proposals", "Only show proposal issues"},
 	}
 
 	app.Commands = []cli.Command{

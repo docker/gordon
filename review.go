@@ -3,8 +3,6 @@ package gordon
 import (
 	"bufio"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -14,7 +12,41 @@ import (
 	"code.google.com/p/go.codereview/patch"
 )
 
-func GetReviewersForPR(patch io.Reader, withUsername bool) (map[string][]string, error) {
+func GetFileExtensionsForPR(src []byte, ext string) ([]string, error) {
+	extensions := []string{}
+
+	set, err := patch.Parse(src)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, fileset := range set.File {
+		if strings.HasSuffix(fileset.Dst, ext) || strings.HasPrefix(fileset.Src, ext) {
+			extensions = append(extensions, ext)
+		}
+	}
+
+	return extensions, nil
+}
+
+func GetDirsForPR(src []byte, dir string) ([]string, error) {
+	dirs := []string{}
+
+	set, err := patch.Parse(src)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, fileset := range set.File {
+		if strings.HasPrefix(fileset.Dst, dir) || strings.HasPrefix(fileset.Src, dir) {
+			dirs = append(dirs, dir)
+		}
+	}
+
+	return dirs, nil
+}
+
+func GetReviewersForPR(patch []byte, withUsername bool) (map[string][]string, error) {
 	toplevel, err := GetTopLevelGitRepo()
 	if err != nil {
 		return nil, err
@@ -37,16 +69,11 @@ func GetReviewersForPR(patch io.Reader, withUsername bool) (map[string][]string,
 // There is no duplicate checks: the same maintainer may be present in multiple entries
 // of the map, or even multiple times in the same entry if the MAINTAINERS file has
 // duplicate lines.
-func ReviewPatch(src io.Reader, maintainers map[string][]string) (map[string][]string, error) {
+func ReviewPatch(input []byte, maintainers map[string][]string) (map[string][]string, error) {
 	var (
 		reviewers = make(map[string][]string)
 		index     = buildFileIndex(maintainers)
 	)
-
-	input, err := ioutil.ReadAll(src)
-	if err != nil {
-		return nil, err
-	}
 
 	set, err := patch.Parse(input)
 	if err != nil {

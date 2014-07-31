@@ -23,6 +23,8 @@ func loadCommands(app *cli.App) {
 		cli.StringFlag{"sort", "updated", "sort the prs by (created, updated, popularity, long-running)"},
 		cli.StringFlag{"assigned", "", "display only prs assigned to a user"},
 		cli.BoolFlag{"unassigned", "display only unassigned prs"},
+		cli.StringFlag{"dir", "", "display only prs that touch this dir"},
+		cli.StringFlag{"extension", "", "display only prs that have files with this extension (no dot)"},
 	}
 	app.Flags = append(app.Flags, filters...)
 

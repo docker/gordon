@@ -36,6 +36,12 @@ func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullReques
 			}
 		}
 
+		if c.Bool("cleanup") {
+			if !strings.HasPrefix(strings.ToLower(pr.Title), "cleanup") {
+				continue
+			}
+		}
+
 		maintainer := c.String("maintainer")
 		dir := c.String("dir")
 		extension := c.String("extension")

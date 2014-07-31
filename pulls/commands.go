@@ -25,6 +25,7 @@ func loadCommands(app *cli.App) {
 		cli.BoolFlag{"unassigned", "display only unassigned prs"},
 		cli.StringFlag{"dir", "", "display only prs that touch this dir"},
 		cli.StringFlag{"extension", "", "display only prs that have files with this extension (no dot)"},
+		cli.BoolFlag{"cleanup", "display only cleanup prs"},
 	}
 	app.Flags = append(app.Flags, filters...)
 

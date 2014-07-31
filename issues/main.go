@@ -227,7 +227,7 @@ func main() {
 
 	app.Name = "issues"
 	app.Usage = "Manage github issues"
-	app.Version = "0.0.1"
+	app.Version = gordon.Version()
 
 	app.Before = before
 	loadCommands(app)

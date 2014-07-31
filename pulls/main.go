@@ -419,7 +419,7 @@ func main() {
 
 	app.Name = "pulls"
 	app.Usage = "Manage github pull requests for project maintainers"
-	app.Version = "0.0.1"
+	app.Version = gordon.Version()
 
 	app.Before = before
 	loadCommands(app)

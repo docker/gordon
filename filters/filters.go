@@ -2,6 +2,7 @@ package filters
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -35,18 +36,55 @@ func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullReques
 			}
 		}
 
-		if maintainer := c.String("maintainer"); maintainer != "" || c.Bool("mine") {
+		maintainer := c.String("maintainer")
+		dir := c.String("dir")
+		extension := c.String("extension")
+
+		var diff []byte
+
+		if maintainer != "" || dir != "" || extension != "" {
+			diffResp, err := http.Get(pr.DiffURL)
+			if err != nil {
+				continue
+			}
+
+			diff, err = ioutil.ReadAll(diffResp.Body)
+			if err != nil {
+				continue
+			}
+
+			diffResp.Body.Close()
+		}
+
+		if dir != "" {
+			dirs, err := gordon.GetDirsForPR(diff, dir)
+			if err != nil {
+				continue
+			}
+
+			if len(dirs) == 0 {
+				continue
+			}
+		}
+
+		if extension != "" {
+			files, err := gordon.GetFileExtensionsForPR(diff, extension)
+			if err != nil {
+				continue
+			}
+
+			if len(files) == 0 {
+				continue
+			}
+		}
+
+		if maintainer != "" || c.Bool("mine") {
 			if maintainer == "" {
 				maintainer = email
 			}
 
 			var found bool
-			resp, err := http.Get(pr.DiffURL)
-			if err != nil {
-				continue
-			}
-			reviewers, err := gordon.GetReviewersForPR(resp.Body, true)
-			resp.Body.Close()
+			reviewers, err := gordon.GetReviewersForPR(diff, true)
 			if err != nil {
 				continue
 			}

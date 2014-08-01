@@ -162,8 +162,9 @@ func reviewersCmd(c *cli.Context) {
 	}
 
 	var (
-		patch  io.Reader
-		number = c.Args()[0]
+		patch      io.Reader
+		patchBytes []byte
+		number     = c.Args()[0]
 	)
 
 	if number == "-" {
@@ -182,7 +183,12 @@ func reviewersCmd(c *cli.Context) {
 		defer resp.Body.Close()
 	}
 
-	reviewers, err := gordon.GetReviewersForPR(patch, false)
+	patchBytes, err := ioutil.ReadAll(patch)
+	if err != nil {
+		gordon.Fatalf("%s", err)
+	}
+
+	reviewers, err := gordon.GetReviewersForPR(patchBytes, false)
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}

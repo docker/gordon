@@ -142,7 +142,7 @@ func FilterIssues(c *cli.Context, issues []*gh.Issue) ([]*gh.Issue, error) {
 		yesterday      = time.Now().Add(-24 * time.Hour)
 		out            = []*gh.Issue{}
 		client         = gh.NewClient()
-		org, name, err = gordon.GetOriginUrl()
+		org, name, err = gordon.GetRemoteUrl(c.String("remote"))
 	)
 	if err != nil {
 		return nil, err

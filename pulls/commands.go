@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
+	"github.com/docker/gordon"
 )
 
 func loadCommands(app *cli.App) {
@@ -9,7 +10,7 @@ func loadCommands(app *cli.App) {
 	app.Action = mainCmd
 
 	app.Flags = []cli.Flag{
-		cli.StringFlag{"remote", "origin", "git remote to treat as origin"},
+		cli.StringFlag{"remote", gordon.GetDefaultGitRemote(), "git remote to treat as origin"},
 	}
 
 	// Filters modify what type of pr to display

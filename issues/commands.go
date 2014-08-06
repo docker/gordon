@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
+	"github.com/docker/gordon"
 )
 
 func loadCommands(app *cli.App) {
@@ -9,7 +10,7 @@ func loadCommands(app *cli.App) {
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{"assigned", "", "display issues assigned to <user>. Use '*' for all assigned, or 'none' for all unassigned."},
-		cli.StringFlag{"remote", "origin", "git remote to treat as origin"},
+		cli.StringFlag{"remote", gordon.GetDefaultGitRemote(), "git remote to treat as origin"},
 		cli.StringFlag{"milestone", "", "display issues inside a particular <milestone>."},
 		cli.BoolFlag{"no-trunc", "do not truncate the issue name"},
 		cli.IntFlag{"votes", -1, "display the number of votes '+1' filtered by the <number> specified."},

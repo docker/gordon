@@ -22,8 +22,20 @@ func Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func GetOriginUrl() (string, string, error) {
-	return GetRemoteUrl("origin")
+func GetDefaultGitRemote() string {
+	gordonOrigin, err := GetGordonOrigin()
+	if err == nil && len(gordonOrigin) > 0 {
+		return gordonOrigin
+	}
+	return "origin"
+}
+
+func GetGordonOrigin() (string, error) {
+	output, err := GetGitConfig("gordon.origin")
+	if err != nil {
+		return "", err
+	}
+	return string(bytes.Split(output, []byte("\n"))[0]), nil
 }
 
 func GetRemoteUrl(remote string) (string, string, error) {
@@ -49,12 +61,20 @@ func GetRemoteUrl(remote string) (string, string, error) {
 	return "", "", nil
 }
 
-func GetMaintainerManagerEmail() (string, error) {
-	output, err := exec.Command("git", "config", "user.email").Output()
+func GetGitConfig(name string) ([]byte, error) {
+	output, err := exec.Command("git", "config", name).Output()
 	if err != nil {
-		return "", fmt.Errorf("git config user.email: %v", err)
+		return nil, fmt.Errorf("git config %s: %v", name, err)
 	}
-	return string(bytes.Split(output, []byte("\n"))[0]), err
+	return output, nil
+}
+
+func GetMaintainerManagerEmail() (string, error) {
+	output, err := GetGitConfig("user.email")
+	if err != nil {
+		return "", err
+	}
+	return string(bytes.Split(output, []byte("\n"))[0]), nil
 }
 
 // Return the remotes for the current dir

@@ -10,31 +10,31 @@ func loadCommands(app *cli.App) {
 	app.Action = mainCmd
 
 	app.Flags = []cli.Flag{
-		cli.StringFlag{"remote", gordon.GetDefaultGitRemote(), "git remote to treat as origin"},
+		cli.StringFlag{Name: "remote", Value: gordon.GetDefaultGitRemote(), Usage: "git remote to treat as origin"},
 	}
 
 	// Filters modify what type of pr to display
 	filters := []cli.Flag{
-		cli.BoolFlag{"no-merge", "display only prs that cannot be merged"},
-		cli.BoolFlag{"lgtm", "display the number of LGTM"},
-		cli.StringFlag{"state", "open", "display prs based on their state"},
-		cli.BoolFlag{"new", "display prs opened in the last 24 hours"},
-		cli.BoolFlag{"mine", "display only PRs I care about based on the MAINTAINERS files"},
-		cli.StringFlag{"maintainer", "", "display only PRs a maintainer cares about based on the MAINTAINERS files"},
-		cli.StringFlag{"sort", "updated", "sort the prs by (created, updated, popularity, long-running)"},
-		cli.StringFlag{"assigned", "", "display only prs assigned to a user"},
-		cli.BoolFlag{"unassigned", "display only unassigned prs"},
-		cli.StringFlag{"dir", "", "display only prs that touch this dir"},
-		cli.StringFlag{"extension", "", "display only prs that have files with this extension (no dot)"},
-		cli.BoolFlag{"cleanup", "display only cleanup prs"},
+		cli.BoolFlag{Name: "no-merge", Usage: "display only prs that cannot be merged"},
+		cli.BoolFlag{Name: "lgtm", Usage: "display the number of LGTM"},
+		cli.StringFlag{Name: "state", Value: "open", Usage: "display prs based on their state"},
+		cli.BoolFlag{Name: "new", Usage: "display prs opened in the last 24 hours"},
+		cli.BoolFlag{Name: "mine", Usage: "display only PRs I care about based on the MAINTAINERS files"},
+		cli.StringFlag{Name: "maintainer", Value: "", Usage: "display only PRs a maintainer cares about based on the MAINTAINERS files"},
+		cli.StringFlag{Name: "sort", Value: "updated", Usage: "sort the prs by (created, updated, popularity, long-running)"},
+		cli.StringFlag{Name: "assigned", Value: "", Usage: "display only prs assigned to a user"},
+		cli.BoolFlag{Name: "unassigned", Usage: "display only unassigned prs"},
+		cli.StringFlag{Name: "dir", Value: "", Usage: "display only prs that touch this dir"},
+		cli.StringFlag{Name: "extension", Value: "", Usage: "display only prs that have files with this extension (no dot)"},
+		cli.BoolFlag{Name: "cleanup", Usage: "display only cleanup prs"},
 	}
 	app.Flags = append(app.Flags, filters...)
 
 	// Options modify how to display prs
 	options := []cli.Flag{
-		cli.BoolFlag{"no-trunc", "don't truncate pr name"},
-		cli.StringFlag{"user", "", "display only prs from <user>"},
-		cli.StringFlag{"comment", "", "add a comment to the pr"},
+		cli.BoolFlag{Name: "no-trunc", Usage: "don't truncate pr name"},
+		cli.StringFlag{Name: "user", Value: "", Usage: "display only prs from <user>"},
+		cli.StringFlag{Name: "comment", Value: "", Usage: "add a comment to the pr"},
 	}
 	app.Flags = append(app.Flags, options...)
 
@@ -60,8 +60,8 @@ func loadCommands(app *cli.App) {
 			Usage:  "Add a github token for authentication",
 			Action: authCmd,
 			Flags: []cli.Flag{
-				cli.StringFlag{"add", "", "add new token for authentication"},
-				cli.StringFlag{"user", "", "add github user name"},
+				cli.StringFlag{Name: "add", Value: "", Usage: "add new token for authentication"},
+				cli.StringFlag{Name: "user", Value: "", Usage: "add github user name"},
 			},
 		},
 		{
@@ -74,8 +74,8 @@ func loadCommands(app *cli.App) {
 			Usage:  "Merge a pull request",
 			Action: mergeCmd,
 			Flags: []cli.Flag{
-				cli.StringFlag{"m", "", "commit message for merge"},
-				cli.BoolFlag{"force", "merge a pull request that has not been approved"},
+				cli.StringFlag{Name: "m", Value: "", Usage: "commit message for merge"},
+				cli.BoolFlag{Name: "force", Usage: "merge a pull request that has not been approved"},
 			},
 		},
 		{
@@ -104,7 +104,7 @@ func loadCommands(app *cli.App) {
 			Usage:  "Assign a pull request to your github account",
 			Action: takeCmd,
 			Flags: []cli.Flag{
-				cli.BoolFlag{"steal", "steal the pull request from its current owner"},
+				cli.BoolFlag{Name: "steal", Usage: "steal the pull request from its current owner"},
 			},
 		},
 		{
@@ -128,10 +128,10 @@ func loadCommands(app *cli.App) {
 			Usage:  "Show the contributors list with additions, deletions, and commit counts. Default: sorted by Commits",
 			Action: contributorsCmd,
 			Flags: []cli.Flag{
-				cli.BoolFlag{"additions", "sort by additions"},
-				cli.BoolFlag{"deletions", "sort by deletions"},
-				cli.BoolFlag{"commits", "sort by commits"},
-				cli.IntFlag{"top", 10, "top N contributors"},
+				cli.BoolFlag{Name: "additions", Usage: "sort by additions"},
+				cli.BoolFlag{Name: "deletions", Usage: "sort by deletions"},
+				cli.BoolFlag{Name: "commits", Usage: "sort by commits"},
+				cli.IntFlag{Name: "top", Value: 10, Usage: "top N contributors"},
 			},
 		},
 	}

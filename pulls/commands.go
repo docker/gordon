@@ -50,6 +50,9 @@ func loadCommands(app *cli.App) {
 			Name:   "comment",
 			Usage:  "Leave a comment on a pull request",
 			Action: commentCmd,
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "template", Usage: "provide a template for commenting"},
+			},
 		},
 		{
 			Name:   "comments",

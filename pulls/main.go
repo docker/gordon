@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/aybabtme/color/brush"
@@ -17,7 +18,8 @@ import (
 )
 
 var (
-	m *gordon.MaintainerManager
+	m            *gordon.MaintainerManager
+	templatePath = filepath.Join(os.Getenv("HOME"), ".gordon/templates")
 )
 
 func displayAllPullRequests(c *cli.Context) {
@@ -330,9 +332,29 @@ func commentCmd(c *cli.Context) {
 	}
 	tmp, err := ioutil.TempFile("", "pulls-comment-")
 	if err != nil {
-		gordon.Fatalf("%s", err)
+		gordon.Fatalf("%v", err)
 	}
 	defer os.Remove(tmp.Name())
+
+	if template := c.String("template"); template != "" {
+		f, err := os.Open(template)
+
+		if err != nil {
+			path := filepath.Join(templatePath, filepath.Base(c.String("template")))
+
+			f, err = os.Open(path)
+			if err != nil {
+				gordon.Fatalf("%v", err)
+			}
+		}
+
+		defer f.Close()
+
+		if _, err := io.Copy(tmp, f); err != nil {
+			gordon.Fatalf("%v", err)
+		}
+	}
+
 	cmd := exec.Command(editor, tmp.Name())
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -340,10 +362,16 @@ func commentCmd(c *cli.Context) {
 	if err := cmd.Run(); err != nil {
 		gordon.Fatalf("%v", err)
 	}
+
+	if _, err := tmp.Seek(0, 0); err != nil {
+		gordon.Fatalf("%v", err)
+	}
+
 	comment, err := ioutil.ReadAll(tmp)
 	if err != nil {
 		gordon.Fatalf("%v", err)
 	}
+
 	if _, err := m.AddComment(number, string(comment)); err != nil {
 		gordon.Fatalf("%v", err)
 	}
@@ -431,6 +459,8 @@ func main() {
 	app.Name = "pulls"
 	app.Usage = "Manage github pull requests for project maintainers"
 	app.Version = gordon.Version
+
+	os.MkdirAll(templatePath, 0755)
 
 	app.Before = before
 	loadCommands(app)

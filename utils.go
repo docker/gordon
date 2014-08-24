@@ -3,6 +3,7 @@ package gordon
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,7 +11,8 @@ import (
 )
 
 var (
-	VerboseOutput = false
+	VerboseOutput      = false
+	ErrNoUsernameKnown = errors.New("No Username known - you probably need to use the `auth` option to configure your GitHub token")
 )
 
 type remote struct {

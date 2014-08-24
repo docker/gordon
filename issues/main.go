@@ -47,6 +47,9 @@ func takeCmd(c *cli.Context) {
 		if err != nil {
 			gordon.Fatalf("%s", err)
 		}
+		if user == nil {
+			gordon.Fatalf("%v", gordon.ErrNoUsernameKnown)
+		}
 		if issue.Assignee.Login != "" && !c.Bool("overwrite") {
 			fmt.Printf("Use the flag --overwrite to take the issue from %s\n", issue.Assignee.Login)
 			return

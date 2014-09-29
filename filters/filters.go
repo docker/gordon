@@ -48,7 +48,7 @@ func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullReques
 
 		var diff []byte
 
-		if maintainer != "" || dir != "" || extension != "" {
+		if maintainer != "" || dir != "" || extension != "" || c.Bool("mine") {
 			diffResp, err := http.Get(pr.DiffURL)
 			if err != nil {
 				continue

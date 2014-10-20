@@ -138,5 +138,10 @@ func loadCommands(app *cli.App) {
 				cli.IntFlag{Name: "top", Value: 10, Usage: "top N contributors"},
 			},
 		},
+		{
+			Name:   "compare",
+			Usage:  "Compare two branches to simplify the creation of patch merge pull requests.",
+			Action: compareCmd,
+		},
 	}
 }

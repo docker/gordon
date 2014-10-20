@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -8,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/aybabtme/color/brush"
@@ -439,6 +442,79 @@ func sendCmd(c *cli.Context) {
 		fmt.Printf("Overwrote %v\n", pr.Number)
 	} else {
 		gordon.Fatalf("Usage: send [ID]")
+	}
+}
+
+// I need to parse the output of git!
+func git(args ...string) (string, error) {
+        cmd := exec.Command("git", args...)
+        //PrintVerboseCommand(cmd)
+        cmd.Stderr = os.Stderr
+        // cmd.Stdout = os.Stdout
+
+        b, err := cmd.Output()
+        if err != nil {
+                return "", err
+        }
+        out := string(b)
+	return out, nil
+}
+
+// compareCmd searches to find Merge commits that are in master that are not in the branch
+func compareCmd(c *cli.Context) {
+
+// TODO: don't repase all history to the begining of time (--after?)
+
+	if nArgs := len(c.Args()); nArgs == 2 {
+		// git log --format=oneline upstream/master > master.log
+		masterLog, err := git("log", "--format=format:%H %s %b", c.Args()[0])
+		if err != nil {
+			gordon.Fatalf("%v", err)
+		}
+
+		// git log --format=oneline upstream/docs > docs.log
+		branchLog, err := git("log", "--format=format:%H %s %b", c.Args()[1])
+		if err != nil {
+			gordon.Fatalf("%v", err)
+		}
+
+		// diff -U 0 master.log docs.log  | grep "Merge pull" | sed "s/^-/- /g"
+		// Parse both logs looking for 'Merge pull request #`
+		reMergeLine := regexp.MustCompile(`^([0-9a-f]{40}) Merge pull request #([0-9]*) from (.*)$`)
+		branchPRs := make(map[string]string)
+	        s := bufio.NewScanner(strings.NewReader(branchLog))
+		for s.Scan() {
+			res := reMergeLine.FindStringSubmatch(s.Text())
+			if res == nil {
+				continue
+			}
+			hash := res[1]
+			pr := res[2]
+			//desc := res[3]
+			branchPRs[pr] = hash
+		}
+
+		firstMerged := ""
+	        s = bufio.NewScanner(strings.NewReader(masterLog))
+		for s.Scan() {
+			res := reMergeLine.FindStringSubmatch(s.Text())
+			if res == nil {
+				continue
+			}
+			hash := res[1]
+			pr := res[2]
+			desc := res[3]
+
+			if branchPRs[pr] == "" {
+				// TODO: consider reversing the order of this list to match the commit list in the GH PR
+				fmt.Printf("- %s #%s : %s\n", hash, pr, desc)
+			} else if firstMerged == "" {
+				firstMerged = pr
+				fmt.Println("------- ^^^^ un-considered candidates")
+			}
+		}
+	} else {
+		gordon.Fatalf("Usage: compare [branch] [branch]")
 	}
 }
 

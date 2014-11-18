@@ -47,12 +47,15 @@ func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullReques
 			}
 
 			maintainer := c.String("maintainer")
+			if maintainer == "" && c.Bool("mine") {
+				maintainer = email
+			}
 			dir := c.String("dir")
 			extension := c.String("extension")
 
 			var diff []byte
 
-			if maintainer != "" || dir != "" || extension != "" || c.Bool("mine") {
+			if maintainer != "" || dir != "" || extension != "" {
 				diffResp, err := http.Get(pr.DiffURL)
 				if err != nil {
 					chPrs <- nil
@@ -94,11 +97,7 @@ func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullReques
 				}
 			}
 
-			if maintainer != "" || c.Bool("mine") {
-				if maintainer == "" {
-					maintainer = email
-				}
-
+			if maintainer != "" {
 				var found bool
 				reviewers, err := gordon.GetReviewersForPR(diff, true)
 				if err != nil {

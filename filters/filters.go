@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -16,125 +17,152 @@ import (
 func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullRequest, error) {
 	var (
 		yesterday  = time.Now().Add(-24 * time.Hour)
-		out        = []*gh.PullRequest{}
+		out        = filteredPullRequests{} //[]*gh.PullRequest{}
 		email, err = gordon.GetMaintainerManagerEmail()
+		chPrs      = make(chan *gh.PullRequest)
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, pr := range prs {
-		fmt.Printf(".")
-
-		if c.Bool("new") && !pr.CreatedAt.After(yesterday) {
-			continue
-		}
-
-		if user := c.String("user"); user != "" {
-			if pr.User.Login != user {
-				continue
-			}
-		}
-
-		if c.Bool("cleanup") {
-			if !strings.HasPrefix(strings.ToLower(pr.Title), "cleanup") {
-				continue
-			}
-		}
-
-		maintainer := c.String("maintainer")
-		dir := c.String("dir")
-		extension := c.String("extension")
-
-		var diff []byte
-
-		if maintainer != "" || dir != "" || extension != "" || c.Bool("mine") {
-			diffResp, err := http.Get(pr.DiffURL)
-			if err != nil {
-				continue
+		go func(pr *gh.PullRequest) {
+			if c.Bool("new") && !pr.CreatedAt.After(yesterday) {
+				chPrs <- nil
+				return
 			}
 
-			diff, err = ioutil.ReadAll(diffResp.Body)
-			if err != nil {
-				continue
+			if user := c.String("user"); user != "" {
+				if pr.User.Login != user {
+					chPrs <- nil
+					return
+				}
 			}
 
-			diffResp.Body.Close()
-		}
-
-		if dir != "" {
-			dirs, err := gordon.GetDirsForPR(diff, dir)
-			if err != nil {
-				continue
+			if c.Bool("cleanup") {
+				if !strings.HasPrefix(strings.ToLower(pr.Title), "cleanup") {
+					chPrs <- nil
+					return
+				}
 			}
 
-			if len(dirs) == 0 {
-				continue
-			}
-		}
+			maintainer := c.String("maintainer")
+			dir := c.String("dir")
+			extension := c.String("extension")
 
-		if extension != "" {
-			files, err := gordon.GetFileExtensionsForPR(diff, extension)
-			if err != nil {
-				continue
+			var diff []byte
+
+			if maintainer != "" || dir != "" || extension != "" || c.Bool("mine") {
+				diffResp, err := http.Get(pr.DiffURL)
+				if err != nil {
+					chPrs <- nil
+					return
+				}
+
+				diff, err = ioutil.ReadAll(diffResp.Body)
+				if err != nil {
+					chPrs <- nil
+					return
+				}
+
+				diffResp.Body.Close()
 			}
 
-			if len(files) == 0 {
-				continue
-			}
-		}
+			if dir != "" {
+				dirs, err := gordon.GetDirsForPR(diff, dir)
+				if err != nil {
+					chPrs <- nil
+					return
+				}
 
-		if maintainer != "" || c.Bool("mine") {
-			if maintainer == "" {
-				maintainer = email
+				if len(dirs) == 0 {
+					chPrs <- nil
+					return
+				}
 			}
 
-			var found bool
-			reviewers, err := gordon.GetReviewersForPR(diff, true)
-			if err != nil {
-				continue
+			if extension != "" {
+				files, err := gordon.GetFileExtensionsForPR(diff, extension)
+				if err != nil {
+					chPrs <- nil
+					return
+				}
+
+				if len(files) == 0 {
+					chPrs <- nil
+					return
+				}
 			}
-			for file := range reviewers {
-				for _, reviewer := range reviewers[file] {
-					if reviewer == maintainer {
-						found = true
+
+			if maintainer != "" || c.Bool("mine") {
+				if maintainer == "" {
+					maintainer = email
+				}
+
+				var found bool
+				reviewers, err := gordon.GetReviewersForPR(diff, true)
+				if err != nil {
+					chPrs <- nil
+					return
+				}
+				for file := range reviewers {
+					for _, reviewer := range reviewers[file] {
+						if reviewer == maintainer {
+							found = true
+						}
+					}
+				}
+				if !found {
+					chPrs <- nil
+					return
+				}
+
+			}
+
+			if c.Bool("unassigned") && pr.Assignee != nil {
+				chPrs <- nil
+				return
+			} else if assigned := c.String("assigned"); assigned != "" && (pr.Assignee == nil || pr.Assignee.Login != assigned) {
+				chPrs <- nil
+				return
+			}
+
+			if c.Bool("lgtm") {
+				pr.ReviewComments = 0
+				maintainersOccurrence := map[string]bool{}
+				for _, comment := range pr.CommentsBody {
+					// We should check it this LGTM is by a user in
+					// the maintainers file
+					userName := comment.User.Login
+					if strings.Contains(comment.Body, "LGTM") && !maintainersOccurrence[userName] {
+						maintainersOccurrence[userName] = true
+						pr.ReviewComments += 1
 					}
 				}
 			}
-			if !found {
-				continue
+
+			if c.Bool("no-merge") && pr.Mergeable {
+				chPrs <- nil
+				return
 			}
-
-		}
-
-		if c.Bool("unassigned") && pr.Assignee != nil {
-			continue
-		} else if assigned := c.String("assigned"); assigned != "" && (pr.Assignee == nil || pr.Assignee.Login != assigned) {
-			continue
-		}
-
-		if c.Bool("lgtm") {
-			pr.ReviewComments = 0
-			maintainersOccurrence := map[string]bool{}
-			for _, comment := range pr.CommentsBody {
-				// We should check it this LGTM is by a user in
-				// the maintainers file
-				userName := comment.User.Login
-				if strings.Contains(comment.Body, "LGTM") && !maintainersOccurrence[userName] {
-					maintainersOccurrence[userName] = true
-					pr.ReviewComments += 1
-				}
-			}
-		}
-
-		if c.Bool("no-merge") && pr.Mergeable {
-			continue
-		}
-
-		out = append(out, pr)
+			chPrs <- pr
+		}(pr)
 	}
+	for i := 0; i < len(prs); i++ {
+		if pr := <-chPrs; pr != nil {
+			out = append(out, pr)
+		}
+	}
+	sort.Sort(out)
 	return out, nil
+}
 
+type filteredPullRequests []*gh.PullRequest
+
+func (r filteredPullRequests) Len() int      { return len(r) }
+func (r filteredPullRequests) Swap(i, j int) { r[i], r[j] = r[j], r[i] }
+func (r filteredPullRequests) Less(i, j int) bool {
+	return r[j].UpdatedAt.After(r[i].UpdatedAt)
 }
 
 func FilterIssues(c *cli.Context, issues []*gh.Issue) ([]*gh.Issue, error) {

@@ -65,7 +65,7 @@ func GetRemoteUrl(remote string) (string, string, error) {
 			}
 
 			name := parts[len(parts)-1]
-			name = strings.TrimRight(name, ".git")
+			name = strings.TrimSuffix(name, ".git")
 
 			return org, name, nil
 		}

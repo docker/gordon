@@ -140,7 +140,7 @@ func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullReques
 				}
 			}
 
-			if c.Bool("no-merge") && pr.Mergeable {
+			if c.Bool("no-merge") && *pr.Mergeable {
 				chPrs <- nil
 				return
 			}

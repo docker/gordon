@@ -447,23 +447,23 @@ func sendCmd(c *cli.Context) {
 
 // I need to parse the output of git!
 func git(args ...string) (string, error) {
-        cmd := exec.Command("git", args...)
-        //PrintVerboseCommand(cmd)
-        cmd.Stderr = os.Stderr
-        // cmd.Stdout = os.Stdout
+	cmd := exec.Command("git", args...)
+	//PrintVerboseCommand(cmd)
+	cmd.Stderr = os.Stderr
+	// cmd.Stdout = os.Stdout
 
-        b, err := cmd.Output()
-        if err != nil {
-                return "", err
-        }
-        out := string(b)
+	b, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	out := string(b)
 	return out, nil
 }
 
 // compareCmd searches to find Merge commits that are in master that are not in the branch
 func compareCmd(c *cli.Context) {
 
-// TODO: don't repase all history to the begining of time (--after?)
+	// TODO: don't repase all history to the begining of time (--after?)
 
 	if nArgs := len(c.Args()); nArgs == 2 {
 		// git log --format=oneline upstream/master > master.log
@@ -482,7 +482,7 @@ func compareCmd(c *cli.Context) {
 		// Parse both logs looking for 'Merge pull request #`
 		reMergeLine := regexp.MustCompile(`^([0-9a-f]{40}) Merge pull request #([0-9]*) from (.*)$`)
 		branchPRs := make(map[string]string)
-	        s := bufio.NewScanner(strings.NewReader(branchLog))
+		s := bufio.NewScanner(strings.NewReader(branchLog))
 		for s.Scan() {
 			res := reMergeLine.FindStringSubmatch(s.Text())
 			if res == nil {
@@ -495,7 +495,7 @@ func compareCmd(c *cli.Context) {
 		}
 
 		firstMerged := ""
-	        s = bufio.NewScanner(strings.NewReader(masterLog))
+		s = bufio.NewScanner(strings.NewReader(masterLog))
 		for s.Scan() {
 			res := reMergeLine.FindStringSubmatch(s.Text())
 			if res == nil {

@@ -134,8 +134,8 @@ func DisplayPullRequest(pr *gh.PullRequest) {
 	if pr.Merged {
 		fmt.Fprintf(os.Stdout, "\nMerged by: %s\nMerged at: %s\nMerge Commit: %s\n\n", Yellow("@"+pr.MergedBy.Login), Yellow(pr.MergedAt.Format(time.RubyDate)), Yellow(pr.MergeCommitSha))
 	} else {
-		m := fmt.Sprintf("%t", pr.Mergeable)
-		if pr.Mergeable {
+		m := fmt.Sprintf("%t", *pr.Mergeable)
+		if *pr.Mergeable {
 			fmt.Fprintf(os.Stdout, "Mergeable: %s", Green(m))
 		} else {
 			fmt.Fprintf(os.Stdout, "Mergeable: %s", Red(m))

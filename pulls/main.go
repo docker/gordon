@@ -221,7 +221,8 @@ func mainCmd(c *cli.Context) {
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}
-	gordon.DisplayPullRequest(pr)
+	status, err := m.GetStatus(pr)
+	gordon.DisplayPullRequest(pr, status)
 }
 
 func commentsCmd(c *cli.Context) {

@@ -127,7 +127,7 @@ func DisplayContributors(c *cli.Context, contributors []*gh.Contributor) {
 	}
 }
 
-func DisplayPullRequest(pr *gh.PullRequest) {
+func DisplayPullRequest(pr *gh.PullRequest, status gh.CombinedStatus) {
 	fmt.Fprint(os.Stdout, fmt.Sprintf("Pull Request from: %s", Green("@"+pr.User.Login)), "\n")
 	fmt.Printf("No: %d\nSha: %s\nTitle: %s\n", pr.Number, pr.Head.Sha, pr.Title)
 
@@ -142,6 +142,48 @@ func DisplayPullRequest(pr *gh.PullRequest) {
 		}
 	}
 	fmt.Fprint(os.Stdout, "\n")
+
+	var buildStatus string
+	switch status.State {
+	case "pending":
+		buildStatus = Yellow("none")
+	case "success":
+		buildStatus = Green("success")
+	case "error":
+		buildStatus = Red("error")
+	case "failure":
+		buildStatus = Red("failure")
+	default:
+		buildStatus = Red("unknown")
+	}
+	fmt.Fprintln(os.Stdout, "Build Status:", buildStatus)
+
+	states := make(map[string]gh.Status)
+	if status.State != "success" {
+		for _, curState := range status.Statuses {
+			if _, ok := states[curState.Context]; ok == false {
+				states[curState.Context] = curState
+			}
+		}
+	}
+
+	var contexts []string
+	for _, v := range states {
+		contexts = append(contexts, v.Context)
+	}
+	sort.Strings(contexts)
+	for _, v := range contexts {
+		statusString := fmt.Sprintln("\t" + v + ": " + states[v].State + " " + states[v].TargetURL)
+		switch states[v].State {
+		case "pending":
+			buildStatus = Yellow(statusString)
+		case "success":
+			buildStatus = Green(statusString)
+		default:
+			buildStatus = Red(statusString)
+		}
+		fmt.Fprint(os.Stdout, buildStatus)
+	}
 
 	lines := strings.Split(pr.Body, "\n")
 	for i, l := range lines {

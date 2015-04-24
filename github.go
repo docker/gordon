@@ -494,3 +494,11 @@ func GenBranchName(text string) string {
 	branchName = toUnderscore.ReplaceAllString(branchName, "_")
 	return branchName
 }
+
+// GetStatus queries the GithubAPI for the current build status of a pull request
+// See http://developer.github.com/v3/issues/#list-issues-for-a-repository
+func (m *MaintainerManager) GetStatus(pr *gh.PullRequest) (gh.CombinedStatus, error) {
+	o := &gh.Options{}
+	o.QueryParams = map[string]string{}
+	return m.client.CombinedStatus(m.repo, pr.Head.Sha, o)
+}

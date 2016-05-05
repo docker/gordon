@@ -18,25 +18,27 @@ var (
 	configPath    = path.Join(os.Getenv("HOME"), ".maintainercfg")
 )
 
-func alruCmd(c *cli.Context) {
+func alruCmd(c *cli.Context) error {
 	lru, err := m.GetFirstIssue("open", "updated")
 	if err != nil {
 		gordon.Fatalf("Error getting issues: %s", err)
 	}
 	fmt.Printf("%v (#%d)\n", gordon.HumanDuration(time.Since(lru.UpdatedAt)), lru.Number)
+	return nil
 }
 
-func repositoryInfoCmd(c *cli.Context) {
+func repositoryInfoCmd(c *cli.Context) error {
 	r, err := m.Repository()
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}
 	fmt.Printf("Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
+	return nil
 }
 
 //Take a specific issue. If it's taken, show a message with the overwrite optional flag
 //If the user doesn't have permissions, add a comment #volunteer
-func takeCmd(c *cli.Context) {
+func takeCmd(c *cli.Context) error {
 	if c.Args().Present() {
 		number := c.Args()[0]
 		issue, _, err := m.GetIssue(number, false)
@@ -52,7 +54,7 @@ func takeCmd(c *cli.Context) {
 		}
 		if issue.Assignee.Login != "" && !c.Bool("overwrite") {
 			fmt.Printf("Use the flag --overwrite to take the issue from %s\n", issue.Assignee.Login)
-			return
+			return nil
 		}
 		issue.Assignee = *user
 		patchedIssue, err := m.PatchIssue(number, issue)
@@ -68,10 +70,10 @@ func takeCmd(c *cli.Context) {
 	} else {
 		fmt.Printf("Please enter the issue's number\n")
 	}
-
+	return nil
 }
 
-func closeCmd(c *cli.Context) {
+func closeCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		gordon.Fatalf("Please enter the issue's number")
 	}
@@ -80,6 +82,7 @@ func closeCmd(c *cli.Context) {
 		gordon.Fatalf("%v", err)
 	}
 	fmt.Printf("Closed issue %s\n", number)
+	return nil
 }
 
 func buildQuery(c *cli.Context) string {
@@ -115,7 +118,7 @@ func buildQuery(c *cli.Context) string {
 
 //Search for issues. You add some restrictions to the query. such:
 // authors, assignee, state, etc. Check the command help for more options.
-func searchCmd(c *cli.Context) {
+func searchCmd(c *cli.Context) error {
 	if c.Args().Present() {
 		issues, err := m.GetIssuesFound(buildQuery(c))
 		if err != nil {
@@ -126,7 +129,7 @@ func searchCmd(c *cli.Context) {
 	} else {
 		fmt.Printf("Please enter a search term\n")
 	}
-
+	return nil
 }
 
 func addComment(number, comment string) {
@@ -137,7 +140,7 @@ func addComment(number, comment string) {
 	gordon.DisplayCommentAdded(cmt)
 }
 
-func mainCmd(c *cli.Context) {
+func mainCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		var issues, err = m.GetIssues("open", c.String("assigned"))
 
@@ -151,7 +154,7 @@ func mainCmd(c *cli.Context) {
 
 		fmt.Printf("%c[2K\r", 27)
 		gordon.DisplayIssues(c, issues, c.Bool("no-trunc"))
-		return
+		return nil
 	}
 
 	var (
@@ -161,13 +164,13 @@ func mainCmd(c *cli.Context) {
 
 	if comment != "" {
 		addComment(number, comment)
-		return
+		return nil
 	}
 
 	if c.Bool("vote") {
 		addComment(number, "+1")
 		fmt.Printf("Vote added to the issue: %s", number)
-		return
+		return nil
 	}
 
 	issue, comments, err := m.GetIssue(number, true)
@@ -175,9 +178,10 @@ func mainCmd(c *cli.Context) {
 		gordon.Fatalf("%s", err)
 	}
 	gordon.DisplayIssue(issue, comments)
+	return nil
 }
 
-func authCmd(c *cli.Context) {
+func authCmd(c *cli.Context) error {
 	config, err := gordon.LoadConfig()
 	if err != nil {
 		config = &gordon.Config{}
@@ -208,6 +212,7 @@ func authCmd(c *cli.Context) {
 		fmt.Fprintf(os.Stderr, "No token registered\n")
 		os.Exit(1)
 	}
+	return nil
 }
 
 func before(c *cli.Context) error {

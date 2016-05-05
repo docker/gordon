@@ -25,7 +25,7 @@ var (
 	templatePath = filepath.Join(os.Getenv("HOME"), ".gordon/templates")
 )
 
-func displayAllPullRequests(c *cli.Context) {
+func displayAllPullRequests(c *cli.Context) error {
 	prs, err := m.GetPullRequests(c.String("state"), c.String("sort"))
 	if err != nil {
 		gordon.Fatalf("Error getting pull requests %s", err)
@@ -51,9 +51,10 @@ func displayAllPullRequests(c *cli.Context) {
 
 	fmt.Printf("%c[2K\r", 27)
 	gordon.DisplayPullRequests(c, prs, c.Bool("no-trunc"))
+	return nil
 }
 
-func displayAllPullRequestFiles(c *cli.Context, number string) {
+func displayAllPullRequestFiles(c *cli.Context, number string) error {
 	prfs, err := m.GetPullRequestFiles(number)
 	if err == nil {
 		i := 1
@@ -62,14 +63,16 @@ func displayAllPullRequestFiles(c *cli.Context, number string) {
 			i++
 		}
 	}
+	return err
 }
 
-func alruCmd(c *cli.Context) {
+func alruCmd(c *cli.Context) error {
 	lru, err := m.GetFirstPullRequest("open", "updated")
 	if err != nil {
 		gordon.Fatalf("Error getting pull requests: %s", err)
 	}
 	fmt.Printf("%v (#%d)\n", gordon.HumanDuration(time.Since(lru.UpdatedAt)), lru.Number)
+	return nil
 }
 
 func addComment(number, comment string) {
@@ -80,15 +83,16 @@ func addComment(number, comment string) {
 	gordon.DisplayCommentAdded(cmt)
 }
 
-func repositoryInfoCmd(c *cli.Context) {
+func repositoryInfoCmd(c *cli.Context) error {
 	r, err := m.Repository()
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}
 	fmt.Printf("Name: %s\nForks: %d\nStars: %d\nIssues: %d\n", r.Name, r.Forks, r.Watchers, r.OpenIssues)
+	return nil
 }
 
-func mergeCmd(c *cli.Context) {
+func mergeCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		gordon.Fatalf("usage: merge ID")
 	}
@@ -102,9 +106,10 @@ func mergeCmd(c *cli.Context) {
 	} else {
 		gordon.Fatalf("%s", err)
 	}
+	return nil
 }
 
-func checkoutCmd(c *cli.Context) {
+func checkoutCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		gordon.Fatalf("usage: checkout ID")
 	}
@@ -116,10 +121,11 @@ func checkoutCmd(c *cli.Context) {
 	if err := m.Checkout(pr); err != nil {
 		gordon.Fatalf("%s", err)
 	}
+	return nil
 }
 
 // Approve a pr by adding a LGTM to the comments
-func approveCmd(c *cli.Context) {
+func approveCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		gordon.Fatalf("usage: approve ID")
 	}
@@ -128,10 +134,11 @@ func approveCmd(c *cli.Context) {
 		gordon.Fatalf("%s", err)
 	}
 	fmt.Printf("Pull request %s approved\n", brush.Green(number))
+	return nil
 }
 
 // Show the patch in a PR
-func showCmd(c *cli.Context) {
+func showCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		gordon.Fatalf("usage: show ID")
 	}
@@ -149,19 +156,21 @@ func showCmd(c *cli.Context) {
 	if err := gordon.DisplayPatch(patch.Body); err != nil {
 		gordon.Fatalf("%s", err)
 	}
+	return nil
 }
 
 // Show contributors stats
-func contributorsCmd(c *cli.Context) {
+func contributorsCmd(c *cli.Context) error {
 	contributors, err := m.GetContributors()
 	if err != nil {
 		gordon.Fatalf("%s", err)
 	}
 	gordon.DisplayContributors(c, contributors)
+	return nil
 }
 
 // Show the reviewers for this pull request
-func reviewersCmd(c *cli.Context) {
+func reviewersCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		gordon.Fatalf("usage: reviewers ID")
 	}
@@ -198,14 +207,14 @@ func reviewersCmd(c *cli.Context) {
 		gordon.Fatalf("%s", err)
 	}
 	gordon.DisplayReviewers(c, reviewers)
+	return nil
 }
 
 // This is the top level command for
 // working with prs
-func mainCmd(c *cli.Context) {
+func mainCmd(c *cli.Context) error {
 	if !c.Args().Present() {
-		displayAllPullRequests(c)
-		return
+		return displayAllPullRequests(c)
 	}
 
 	var (
@@ -215,7 +224,7 @@ func mainCmd(c *cli.Context) {
 
 	if comment != "" {
 		addComment(number, comment)
-		return
+		return nil
 	}
 	pr, err := m.GetPullRequest(number)
 	if err != nil {
@@ -223,9 +232,10 @@ func mainCmd(c *cli.Context) {
 	}
 	status, err := m.GetStatus(pr)
 	gordon.DisplayPullRequest(pr, status)
+	return nil
 }
 
-func commentsCmd(c *cli.Context) {
+func commentsCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		gordon.Fatalf("usage: comments ID")
 	}
@@ -234,9 +244,10 @@ func commentsCmd(c *cli.Context) {
 		gordon.Fatalf("%s", err)
 	}
 	gordon.DisplayComments(comments)
+	return nil
 }
 
-func authCmd(c *cli.Context) {
+func authCmd(c *cli.Context) error {
 	config, err := gordon.LoadConfig()
 	if err != nil {
 		config = &gordon.Config{}
@@ -267,12 +278,13 @@ func authCmd(c *cli.Context) {
 		fmt.Fprintf(os.Stderr, "No token registered\n")
 		os.Exit(1)
 	}
+	return nil
 }
 
 //Assign a pull request to the current user.
 // If it's taken, show a message with the "--steal" optional flag.
 //If the user doesn't have permissions, add a comment #volunteer
-func takeCmd(c *cli.Context) {
+func takeCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		gordon.Fatalf("usage: take ID")
 	}
@@ -303,9 +315,10 @@ func takeCmd(c *cli.Context) {
 		m.AddComment(number, fmt.Sprintf("#assignee=%s", patchedPR.Assignee.Login))
 		fmt.Printf("Assigned PR %s to %s\n", brush.Green(number), patchedPR.Assignee.Login)
 	}
+	return nil
 }
 
-func dropCmd(c *cli.Context) {
+func dropCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		gordon.Fatalf("usage: drop ID")
 	}
@@ -329,9 +342,10 @@ func dropCmd(c *cli.Context) {
 		gordon.Fatalf("%s", err)
 	}
 	fmt.Printf("Unassigned PR %s\n", brush.Green(number))
+	return nil
 }
 
-func commentCmd(c *cli.Context) {
+func commentCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		gordon.Fatalf("Please enter the issue's number")
 	}
@@ -385,9 +399,10 @@ func commentCmd(c *cli.Context) {
 	if _, err := m.AddComment(number, string(comment)); err != nil {
 		gordon.Fatalf("%v", err)
 	}
+	return nil
 }
 
-func closeCmd(c *cli.Context) {
+func closeCmd(c *cli.Context) error {
 	if !c.Args().Present() {
 		gordon.Fatalf("Please enter the issue's number")
 	}
@@ -396,9 +411,10 @@ func closeCmd(c *cli.Context) {
 		gordon.Fatalf("%v", err)
 	}
 	fmt.Printf("Closed PR %s\n", number)
+	return nil
 }
 
-func sendCmd(c *cli.Context) {
+func sendCmd(c *cli.Context) error {
 	if nArgs := len(c.Args()); nArgs == 0 {
 		// Push the branch, then create the PR
 		// Pick a remote branch name
@@ -444,6 +460,7 @@ func sendCmd(c *cli.Context) {
 	} else {
 		gordon.Fatalf("Usage: send [ID]")
 	}
+	return nil
 }
 
 // I need to parse the output of git!
@@ -462,7 +479,7 @@ func git(args ...string) (string, error) {
 }
 
 // compareCmd searches to find Merge commits that are in master that are not in the branch
-func compareCmd(c *cli.Context) {
+func compareCmd(c *cli.Context) error {
 
 	// TODO: don't repase all history to the begining of time (--after?)
 
@@ -517,6 +534,7 @@ func compareCmd(c *cli.Context) {
 	} else {
 		gordon.Fatalf("Usage: compare [branch] [branch]")
 	}
+	return nil
 }
 
 func before(c *cli.Context) error {

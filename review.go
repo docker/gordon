@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"golang.org/x/codereview/patch"
+	"github.com/fkautz/codereview/patch"
 )
 
 func GetFileExtensionsForPR(src []byte, ext string) ([]string, error) {

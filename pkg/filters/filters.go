@@ -2,6 +2,7 @@ package filters
 
 import (
 	"fmt"
+	"github.com/docker/gordon/pkg/gordon"
 	"io/ioutil"
 	"net/http"
 	"sort"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
-	"github.com/docker/gordon"
 )
 
 func FilterPullRequests(c *cli.Context, prs []*gh.PullRequest) ([]*gh.PullRequest, error) {

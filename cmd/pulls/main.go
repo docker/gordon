@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/docker/gordon/pkg/gordon"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,8 +17,7 @@ import (
 	"github.com/aybabtme/color/brush"
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
-	"github.com/docker/gordon"
-	"github.com/docker/gordon/filters"
+	"github.com/docker/gordon/pkg/filters"
 )
 
 var (

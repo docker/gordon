@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/docker/gordon"
+	"github.com/docker/gordon/pkg/gordon"
 )
 
 func loadCommands(app *cli.App) {

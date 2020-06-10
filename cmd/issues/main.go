@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
+	"github.com/docker/gordon/pkg/gordon"
 	"os"
 	"path"
 	"time"
 
 	"github.com/codegangsta/cli"
 	gh "github.com/crosbymichael/octokat"
-	"github.com/docker/gordon"
-	"github.com/docker/gordon/filters"
+	"github.com/docker/gordon/pkg/filters"
 )
 
 var (

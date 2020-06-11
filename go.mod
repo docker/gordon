@@ -12,7 +12,7 @@ require (
 	github.com/google/go-cmp v0.4.1 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f
+	github.com/moby/term v0.0.0-20200611042045-63b9a826fb74
 	github.com/urfave/cli v1.22.4
 	golang.org/x/sys v0.0.0-20200610111108-226ff32320da // indirect
 )

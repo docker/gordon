@@ -2,7 +2,7 @@ package gordon
 
 import (
 	"github.com/aybabtme/color/brush"
-	"github.com/docker/docker/pkg/term"
+	"github.com/moby/term"
 )
 
 var Colorize bool

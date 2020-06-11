@@ -12,7 +12,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	gh "github.com/crosbymichael/octokat"
 )
 

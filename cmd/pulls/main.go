@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/aybabtme/color/brush"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	gh "github.com/crosbymichael/octokat"
 	"github.com/docker/gordon/pkg/filters"
 )

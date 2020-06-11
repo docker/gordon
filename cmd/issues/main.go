@@ -7,7 +7,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	gh "github.com/crosbymichael/octokat"
 	"github.com/docker/gordon/pkg/filters"
 )
